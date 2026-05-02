@@ -13,7 +13,10 @@ interface Props {
 
 export function SomaticScreen({ item, onComplete, onBack }: Props) {
   const { somaticAnswers, setSomaticAnswer } = useApp();
-  const [step, setStep] = useState(0);
+  const firstUnfilled = SOMATIC_PROMPTS.findIndex(
+    (p) => (somaticAnswers[`${item.key}-${p.id}`] ?? "").trim().length === 0
+  );
+  const [step, setStep] = useState(firstUnfilled >= 0 ? firstUnfilled : SOMATIC_PROMPTS.length - 1);
   const prompt = SOMATIC_PROMPTS[step];
   const key = `${item.key}-${prompt.id}`;
   const value = somaticAnswers[key] ?? "";

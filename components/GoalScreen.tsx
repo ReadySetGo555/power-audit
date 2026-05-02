@@ -14,7 +14,10 @@ interface Props {
 
 export function GoalScreen({ item, onComplete, onBack }: Props) {
   const { goalAnswers, setGoalAnswer } = useApp();
-  const [step, setStep] = useState(0);
+  const firstUnfilled = GOAL_PROMPTS.findIndex(
+    (p) => (goalAnswers[`${item.set.id}-${item.stage.id}-${p.id}`] ?? "").trim().length === 0
+  );
+  const [step, setStep] = useState(firstUnfilled >= 0 ? firstUnfilled : GOAL_PROMPTS.length - 1);
   const prompt = GOAL_PROMPTS[step];
   const key = `${item.set.id}-${item.stage.id}-${prompt.id}`;
   const value = goalAnswers[key] ?? "";

@@ -9,7 +9,7 @@ import { getAllItems } from "@/lib/helpers";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-interface PendingUpdate { setIdx: number; stageIdx: number; }
+interface PendingUpdate { setIdx: number; stageIdx: number; phase?: "questions" | "excited" | "impact"; }
 
 interface AppContextValue {
   answers: Answers;

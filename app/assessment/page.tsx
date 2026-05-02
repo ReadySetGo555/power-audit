@@ -17,7 +17,7 @@ export default function AssessmentPage() {
 
   const [setIdx, setSetIdx] = useState(pendingUpdate?.setIdx ?? 0);
   const [stageIdx, setStageIdx] = useState(pendingUpdate?.stageIdx ?? 0);
-  const [phase, setPhase] = useState<Phase>("questions");
+  const [phase, setPhase] = useState<Phase>((pendingUpdate?.phase as Phase | undefined) ?? "questions");
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
@@ -66,6 +66,18 @@ export default function AssessmentPage() {
     }
   }
 
+  function jumpToSet(targetIdx: number) {
+    const targetSetId = SETS[targetIdx].id;
+    let targetStage = 0;
+    for (let i = 0; i < STAGES.length; i++) {
+      if (!answers[targetSetId]?.[STAGES[i].id]?.score) {
+        targetStage = i;
+        break;
+      }
+    }
+    go(() => { setSetIdx(targetIdx); setStageIdx(targetStage); setPhase("questions"); });
+  }
+
   return (
     <div className="app" ref={topRef}>
       <Header />
@@ -83,17 +95,33 @@ export default function AssessmentPage() {
       <div className={"fw" + (fading ? " out" : "")}>
         {phase === "questions" && (
           <>
+            <div className="set-tabs">
+              {SETS.map((s, idx) => (
+                <button
+                  key={s.id}
+                  className={"set-tab" + (idx === setIdx ? " active" : "")}
+                  onClick={() => jumpToSet(idx)}
+                >
+                  Set {idx + 1}
+                </button>
+              ))}
+            </div>
             <div className="cmap">
-              {STAGES.map((s) => {
+              {STAGES.map((s, idx) => {
                 const isAct = s.id === curStage.id;
                 const isDone = doneInSet.includes(s.id);
                 return (
-                  <div key={s.id} className="cms" style={{
-                    background: isAct ? "#7C5CBF" : "transparent",
-                    color: isAct ? "#0A0908" : isDone ? "#7C5CBF" : "#4A4238",
-                    borderColor: isAct ? "#7C5CBF" : isDone ? "#7C5CBF55" : "#2A2520",
-                    fontWeight: isAct ? 600 : 400,
-                  }}>
+                  <div
+                    key={s.id}
+                    className="cms"
+                    onClick={() => go(() => setStageIdx(idx))}
+                    style={{
+                      background: isAct ? "#7C5CBF" : "transparent",
+                      color: isAct ? "#0A0908" : isDone ? "#7C5CBF" : "#4A4238",
+                      borderColor: isAct ? "#7C5CBF" : isDone ? "#7C5CBF55" : "#2A2520",
+                      fontWeight: isAct ? 600 : 400,
+                    }}
+                  >
                     {s.icon} {s.label}{isDone && !isAct ? " ✓" : ""}
                   </div>
                 );

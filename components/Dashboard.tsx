@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AllItem } from "@/lib/types";
-import { SETS, STAGES, TIER_META, COLOR } from "@/lib/data";
+import { SETS, STAGES, TIER_META, COLOR, GOAL_PROMPTS } from "@/lib/data";
 import { scoreColor, scoreLabel, scoreCat, getTier } from "@/lib/helpers";
 import { useApp } from "@/context/AppContext";
 import { TierItemCard } from "./TierItemCard";
@@ -11,7 +11,7 @@ import { Counters } from "./Counters";
 
 export function Dashboard() {
   const router = useRouter();
-  const { allItems, excited, impactful, goalAnswers, somaticAnswers, toggleBadge, setPendingUpdate } = useApp();
+  const { allItems, answers, excited, impactful, goalAnswers, somaticAnswers, toggleBadge, setPendingUpdate } = useApp();
   const [tab, setTab] = useState("tiers");
   const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
 
@@ -30,6 +30,13 @@ export function Dashboard() {
   const somaticItems = allItems.filter((item) =>
     Object.keys(somaticAnswers).some((k) => k.startsWith(item.key))
   );
+
+  const totalAnswered = SETS.reduce(
+    (acc, set) => acc + STAGES.filter((stage) => answers[set.id]?.[stage.id]?.score != null).length,
+    0
+  );
+  const assessmentTabLabel =
+    totalAnswered < SETS.length * STAGES.length ? "Finish Full Assessment" : "View Assessment Birds-eye";
 
   function toggle(key: string) {
     setOpenSec((o) => ({ ...o, [key]: !o[key] }));
@@ -75,6 +82,136 @@ export function Dashboard() {
           </div>
         )}
       </>
+    );
+  }
+
+  function renderContinueSection() {
+    const assessmentQsDone = totalAnswered === SETS.length * STAGES.length;
+    const assessmentSelDone = SETS.every((s) => excited[s.id] != null && impactful[s.id] != null);
+    const assessmentComplete = assessmentQsDone && assessmentSelDone;
+
+    const incompleteGoalItems = goalItems.filter((item) => {
+      const nonEmpty = GOAL_PROMPTS.filter(
+        (p) => (goalAnswers[`${item.set.id}-${item.stage.id}-${p.id}`] ?? "").trim().length > 0
+      ).length;
+      return nonEmpty > 0 && nonEmpty < GOAL_PROMPTS.length;
+    });
+
+    const inProgressSomaticItems = somaticItems.filter((i) => !i.somaticCleared);
+
+    const nothingStarted =
+      totalAnswered === 0 &&
+      Object.keys(goalAnswers).length === 0 &&
+      Object.keys(somaticAnswers).length === 0;
+    const everythingDone =
+      assessmentComplete && incompleteGoalItems.length === 0 && inProgressSomaticItems.length === 0;
+
+    if (everythingDone) return null;
+
+    if (nothingStarted) {
+      return (
+        <div className="continue-section">
+          <p className="continue-eyebrow">Ready to Begin?</p>
+          <button className="continue-start-btn" onClick={() => router.push("/assessment")}>
+            Start your assessment →
+          </button>
+        </div>
+      );
+    }
+
+    // Find next assessment target
+    let nextTarget: { setIdx: number; stageIdx: number; phase: "questions" | "excited" | "impact" } | null = null;
+    if (!assessmentComplete) {
+      outer: for (let si = 0; si < SETS.length; si++) {
+        for (let sti = 0; sti < STAGES.length; sti++) {
+          if (answers[SETS[si].id]?.[STAGES[sti].id]?.score == null) {
+            nextTarget = { setIdx: si, stageIdx: sti, phase: "questions" };
+            break outer;
+          }
+        }
+      }
+      if (!nextTarget) {
+        for (let si = 0; si < SETS.length; si++) {
+          if (!excited[SETS[si].id]) {
+            nextTarget = { setIdx: si, stageIdx: 0, phase: "excited" };
+            break;
+          }
+        }
+      }
+      if (!nextTarget) {
+        for (let si = 0; si < SETS.length; si++) {
+          if (!impactful[SETS[si].id]) {
+            nextTarget = { setIdx: si, stageIdx: 0, phase: "impact" };
+            break;
+          }
+        }
+      }
+    }
+
+    const hasCards = nextTarget || incompleteGoalItems.length > 0 || inProgressSomaticItems.length > 0;
+    if (!hasCards) return null;
+
+    return (
+      <div className="continue-section">
+        <p className="continue-eyebrow">Continue Where You Left Off</p>
+
+        {nextTarget && (
+          <div
+            className="continue-card"
+            onClick={() => {
+              setPendingUpdate(nextTarget!);
+              router.push("/assessment");
+            }}
+          >
+            <span className="cc-icon">📋</span>
+            <div className="cc-text">
+              <div className="cc-label">
+                {nextTarget.phase === "questions"
+                  ? `Continue ${SETS[nextTarget.setIdx].label}`
+                  : `Selections for ${SETS[nextTarget.setIdx].label}`}
+              </div>
+              <div className="cc-sub">
+                {nextTarget.phase === "questions"
+                  ? `${STAGES[nextTarget.stageIdx].icon} Stage ${nextTarget.stageIdx + 1} — ${STAGES[nextTarget.stageIdx].label}`
+                  : nextTarget.phase === "excited"
+                    ? "Choose your most exciting stage"
+                    : "Choose your most impactful stage"}
+              </div>
+            </div>
+            <span className="cc-arr">→</span>
+          </div>
+        )}
+
+        {incompleteGoalItems.map((item) => (
+          <div
+            key={item.key}
+            className="continue-card"
+            onClick={() => router.push(`/goal/${item.set.id}/${item.stage.id}`)}
+          >
+            <span className="cc-icon">🎯</span>
+            <div className="cc-text">
+              <div className="cc-label">Continue your goal on {item.stage.label}</div>
+              <div className="cc-sub">{item.set.label}</div>
+            </div>
+            <span className="cc-arr">→</span>
+          </div>
+        ))}
+
+        {inProgressSomaticItems.map((item) => (
+          <div
+            key={item.key}
+            className="continue-card"
+            onClick={() => router.push(`/somatic/${item.set.id}/${item.stage.id}`)}
+          >
+            <span className="cc-icon">🎭</span>
+            <div className="cc-text">
+              <div className="cc-label">Continue clearing the block on {item.stage.label}</div>
+              <div className="cc-sub">{item.set.label}</div>
+            </div>
+            <span className="cc-arr">→</span>
+          </div>
+        ))}
+      </div>
     );
   }
 
@@ -203,11 +340,53 @@ export function Dashboard() {
     );
   }
 
+  function renderAssessmentTab() {
+    return (
+      <div className="assessment-grid">
+        <div className="ag-inner">
+          <div className="ag-corner" />
+          {STAGES.map((s) => (
+            <div key={s.id} className="ag-stage-hd">
+              <span className="ag-stage-icon">{s.icon}</span>
+              <span className="ag-stage-name">{s.label}</span>
+            </div>
+          ))}
+          {SETS.flatMap((set, sIdx) => [
+            <div key={`lbl-${set.id}`} className="ag-set-name">{set.label}</div>,
+            ...STAGES.map((stage, stIdx) => {
+              const ans = answers[set.id]?.[stage.id];
+              const hasAnswer = ans?.score != null;
+              return (
+                <div
+                  key={`${set.id}-${stage.id}`}
+                  className="ag-cell"
+                  onClick={() => {
+                    setPendingUpdate({ setIdx: sIdx, stageIdx: stIdx });
+                    router.push("/assessment");
+                  }}
+                >
+                  {hasAnswer ? (
+                    <span className="ag-cell-score" style={{ color: scoreColor(ans.score) }}>
+                      {ans.score}
+                    </span>
+                  ) : (
+                    <span className="ag-cell-empty">—</span>
+                  )}
+                </div>
+              );
+            }),
+          ])}
+        </div>
+      </div>
+    );
+  }
+
   const tabs = [
-    { id: "tiers", label: "Tiers" },
-    { id: "stage", label: "Stage" },
-    { id: "scale", label: "Scale" },
-    { id: "set",   label: "Set" },
+    { id: "tiers",      label: "Tiers" },
+    { id: "stage",      label: "Stage" },
+    { id: "scale",      label: "Scale" },
+    { id: "set",        label: "Set" },
+    { id: "assessment", label: assessmentTabLabel },
   ];
 
   return (
@@ -215,6 +394,7 @@ export function Dashboard() {
       <p className="tv-eyebrow">Your Attention Map</p>
       <h2 className="tv-title">Here is where your power lives right now.</h2>
       <Counters allItems={allItems} />
+      {renderContinueSection()}
       <div className="tabs">
         {tabs.map((t) => (
           <button key={t.id} className={"tab-btn" + (tab === t.id ? " active" : "")} onClick={() => setTab(t.id)}>
@@ -223,10 +403,11 @@ export function Dashboard() {
         ))}
       </div>
       <div className="tab-content">
-        {tab === "tiers" && renderTiersTab()}
-        {tab === "stage" && renderStageTab()}
-        {tab === "scale" && renderScaleTab()}
-        {tab === "set"   && renderSetTab()}
+        {tab === "tiers"      && renderTiersTab()}
+        {tab === "stage"      && renderStageTab()}
+        {tab === "scale"      && renderScaleTab()}
+        {tab === "set"        && renderSetTab()}
+        {tab === "assessment" && renderAssessmentTab()}
       </div>
     </div>
   );

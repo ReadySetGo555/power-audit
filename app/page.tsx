@@ -8,7 +8,7 @@ export default function IntroPage() {
   const router = useRouter();
 
   function begin() {
-    router.push("/assessment");
+    router.push("/dashboard");
   }
 
   return (
