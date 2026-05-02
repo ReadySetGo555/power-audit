@@ -3,14 +3,11 @@
 import { useRouter } from "next/navigation";
 import { STAGES } from "@/lib/data";
 import { Header } from "@/components/Header";
-import { useApp } from "@/context/AppContext";
 
 export default function IntroPage() {
   const router = useRouter();
-  const { resetAll } = useApp();
 
   function begin() {
-    resetAll();
     router.push("/assessment");
   }
 

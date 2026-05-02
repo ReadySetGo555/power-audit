@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { supabase, DEFAULT_USER_ID } from "@/lib/supabase";
 import type { Answers, Selections, GoalAnswers, SomaticAnswers, SomaticDone, AllItem } from "@/lib/types";
 import type { ParsedImport } from "@/lib/csv";
@@ -58,6 +58,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [somaticDone, setSomaticDone]   = useState<SomaticDone>({});
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [loading, setLoading]           = useState(true);
+  const loadedRef                        = useRef(false);
 
   // ── initial fetch ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -118,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("[supabase] initial fetch failed:", err);
       } finally {
+        loadedRef.current = true;
         setLoading(false);
       }
     }
@@ -135,7 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAnswers((a) => {
       const cur = a[setId]?.[stageId] ?? {};
       const next = { ...cur, [field]: value };
-      db("assessment_answers").upsert({
+      if (loadedRef.current) db("assessment_answers").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId,
         score: (next.score as number) ?? null,
         why: (next.why as string) ?? null,
@@ -152,7 +154,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setExcitedStage = useCallback((setId: string, stageId: string | null) => {
     setExcited((e) => {
-      db("set_selections").upsert({
+      if (loadedRef.current) db("set_selections").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId,
         excited_stage_id: stageId,
         impactful_stage_id: impactful[setId] ?? null,
@@ -165,7 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setImpactfulStage = useCallback((setId: string, stageId: string | null) => {
     setImpactful((e) => {
-      db("set_selections").upsert({
+      if (loadedRef.current) db("set_selections").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId,
         excited_stage_id: excited[setId] ?? null,
         impactful_stage_id: stageId,
@@ -181,7 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const parts = key.split("-");
       const [setId, stageId, ...rest] = parts;
       const promptId = rest.join("-");
-      db("goal_answers").upsert({
+      if (loadedRef.current) db("goal_answers").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId, prompt_id: promptId,
         answer: value,
         updated_at: new Date().toISOString(),
@@ -196,7 +198,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const parts = key.split("-");
       const [setId, stageId, ...rest] = parts;
       const promptId = rest.join("-");
-      db("somatic_answers").upsert({
+      if (loadedRef.current) db("somatic_answers").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId, prompt_id: promptId,
         answer: value,
         updated_at: new Date().toISOString(),
@@ -211,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAnswers((a) => {
       const cur = a[setId]?.[stageId] ?? {};
       const next = { ...cur, somatic: false, blocked: false, somatic_cleared: true };
-      db("assessment_answers").upsert({
+      if (loadedRef.current) db("assessment_answers").upsert({
         user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId,
         score: (next.score as number) ?? null,
         why: (next.why as string) ?? null,
@@ -228,7 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (type === "excited") {
       setExcited((e) => {
         const next = e[setId] === stageId ? null : stageId;
-        db("set_selections").upsert({
+        if (loadedRef.current) db("set_selections").upsert({
           user_id: DEFAULT_USER_ID, set_id: setId,
           excited_stage_id: next,
           impactful_stage_id: impactful[setId] ?? null,
@@ -240,7 +242,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else {
       setImpactful((e) => {
         const next = e[setId] === stageId ? null : stageId;
-        db("set_selections").upsert({
+        if (loadedRef.current) db("set_selections").upsert({
           user_id: DEFAULT_USER_ID, set_id: setId,
           excited_stage_id: excited[setId] ?? null,
           impactful_stage_id: next,
