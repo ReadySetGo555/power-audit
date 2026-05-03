@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { exportCSV, parseCSV } from "@/lib/csv";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const isDashboard = pathname === "/dashboard";
+  const isAssessment = pathname === "/assessment";
   const { answers, excited, impactful, goalAnswers, somaticAnswers, importAll } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +53,15 @@ export function Header() {
             </button>
             <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleFileChange} />
           </>
+        )}
+        {isAssessment && (
+          <button
+            className="btn-ghost"
+            style={{ fontSize: ".78rem", padding: ".4rem 1rem" }}
+            onClick={() => router.push("/dashboard")}
+          >
+            Dashboard
+          </button>
         )}
         <div className="htag">Power Audit</div>
       </div>
