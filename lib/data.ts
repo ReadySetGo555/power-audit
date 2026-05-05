@@ -58,6 +58,18 @@ export const SOMATIC_PROMPTS = [
   { id: "commit",    label: "Commit to the New",     question: "What will you do differently starting right now?",             placeholder: "Starting now, I will..." },
 ];
 
+export const BLOCK_PROMPTS = [
+  { id: "actions",          label: "Actions",               question: "What actions are you taking (or avoiding) because of this block?",                                                        placeholder: "I am taking (or avoiding)..." },
+  { id: "behaviors",        label: "Behaviors",             question: "What patterns or behaviors do you notice in yourself around this?",                                                        placeholder: "I notice the pattern of..." },
+  { id: "feelings",         label: "Feelings & Sensations", question: "What do you feel in your body when this block is present?",                                                               placeholder: "I feel in my body..." },
+  { id: "thoughts",         label: "Thoughts",              question: "What is your mind telling you about this?",                                                                               placeholder: "My mind says..." },
+  { id: "snapshot",         label: "The Snapshot",          question: "Looking at your actions, behaviors, feelings, and thoughts together — what do you see?",                                  placeholder: "What I see is..." },
+  { id: "belief",           label: "The Belief",            question: "What belief is driving all of this?",                                                                                     placeholder: "The belief driving this is..." },
+  { id: "agreement",        label: "The Agreement",         question: "What have you been agreeing to because of this belief?",                                                                  placeholder: "I have been agreeing to..." },
+  { id: "new_agreement",    label: "New Agreement",         question: "What new agreement would serve you better?",                                                                              placeholder: "A better agreement would be..." },
+  { id: "immediate_action", label: "Immediate Action",      question: "What is the one action connected to this new agreement that you will take or schedule right now?",                        placeholder: "Right now I will..." },
+];
+
 export const TIER_META: Record<number, TierMeta> = {
   1: { label: "Tier 1 — Urgent",           desc: "Excited or impactful + somatic block. Clear the block first.", color: "#C0392B" },
   2: { label: "Tier 2 — Important",        desc: "Both excited and impactful. Ready to build.",                  color: "#E67E22" },

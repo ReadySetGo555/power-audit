@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { supabase, DEFAULT_USER_ID } from "@/lib/supabase";
-import type { Answers, Selections, GoalAnswers, SomaticAnswers, SomaticDone, AllItem } from "@/lib/types";
+import type { Answers, Selections, GoalAnswers, SomaticAnswers, SomaticDone, BlockAnswers, AllItem } from "@/lib/types";
 import type { ParsedImport } from "@/lib/csv";
 import { SETS, STAGES } from "@/lib/data";
 import { getAllItems } from "@/lib/helpers";
@@ -18,6 +18,7 @@ interface AppContextValue {
   goalAnswers: GoalAnswers;
   somaticAnswers: SomaticAnswers;
   somaticDone: SomaticDone;
+  blockAnswers: BlockAnswers;
   allItems: AllItem[];
   loading: boolean;
   pendingUpdate: PendingUpdate | null;
@@ -26,7 +27,10 @@ interface AppContextValue {
   setImpactfulStage: (setId: string, stageId: string | null) => void;
   setGoalAnswer: (key: string, value: string) => void;
   setSomaticAnswer: (key: string, value: string) => void;
+  setBlockAnswer: (key: string, value: string) => void;
   completeSomatic: (itemKey: string, setId: string, stageId: string) => void;
+  completeBlock: (setId: string, stageId: string) => void;
+  scheduleBlockAction: (setId: string, stageId: string) => void;
   toggleBadge: (setId: string, stageId: string, type: "excited" | "impact") => void;
   setPendingUpdate: (u: PendingUpdate | null) => void;
   resetAll: () => void;
@@ -56,6 +60,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [goalAnswers, setGoalAnswers]   = useState<GoalAnswers>({});
   const [somaticAnswers, setSomaticAnswers] = useState<SomaticAnswers>({});
   const [somaticDone, setSomaticDone]   = useState<SomaticDone>({});
+  const [blockAnswers, setBlockAnswers] = useState<BlockAnswers>({});
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [loading, setLoading]           = useState(true);
   const loadedRef                        = useRef(false);
@@ -65,11 +70,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async function fetchAll() {
       setLoading(true);
       try {
-        const [aRes, sRes, gRes, somRes] = await Promise.all([
+        const [aRes, sRes, gRes, somRes, blkRes] = await Promise.all([
           db("assessment_answers").select("*").eq("user_id", DEFAULT_USER_ID),
           db("set_selections").select("*").eq("user_id", DEFAULT_USER_ID),
           db("goal_answers").select("*").eq("user_id", DEFAULT_USER_ID),
           db("somatic_answers").select("*").eq("user_id", DEFAULT_USER_ID),
+          db("block_answers").select("*").eq("user_id", DEFAULT_USER_ID),
         ]);
 
         // assessment_answers → answers + somaticDone
@@ -86,6 +92,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             somatic: r.somatic as boolean,
             blocked: r.blocked as boolean,
             somatic_cleared: r.somatic_cleared as boolean,
+            block_cleared: r.block_cleared as boolean | undefined,
+            action_scheduled: r.action_scheduled as boolean | undefined,
+            action_confirmed: r.action_confirmed as boolean | undefined,
           };
           if (r.somatic_cleared) newSomaticDone[`${sid}-${stid}`] = true;
         }
@@ -110,12 +119,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           newSomaticAnswers[`${r.set_id}-${r.stage_id}-${r.prompt_id}`] = (r.answer as string) ?? "";
         }
 
+        // block_answers
+        const newBlockAnswers: BlockAnswers = {};
+        for (const r of (blkRes.data ?? []) as Record<string, unknown>[]) {
+          newBlockAnswers[`${r.set_id}-${r.stage_id}-${r.prompt_id}`] = (r.answer as string) ?? "";
+        }
+
         setAnswers(newAnswers);
         setExcited(newExcited);
         setImpactful(newImpactful);
         setGoalAnswers(newGoalAnswers);
         setSomaticAnswers(newSomaticAnswers);
         setSomaticDone(newSomaticDone);
+        setBlockAnswers(newBlockAnswers);
       } catch (err) {
         console.error("[supabase] initial fetch failed:", err);
       } finally {
@@ -205,6 +221,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, { onConflict: "user_id,set_id,stage_id,prompt_id" })
         .then(({ error }) => logErr("somatic_answers upsert", error));
       return { ...a, [key]: value };
+    });
+  }, []);
+
+  const setBlockAnswer = useCallback((key: string, value: string) => {
+    setBlockAnswers((a) => {
+      const parts = key.split("-");
+      const [setId, stageId, ...rest] = parts;
+      const promptId = rest.join("-");
+      if (loadedRef.current) db("block_answers").upsert({
+        user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId, prompt_id: promptId,
+        answer: value,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,set_id,stage_id,prompt_id" })
+        .then(({ error }) => logErr("block_answers upsert", error));
+      return { ...a, [key]: value };
+    });
+  }, []);
+
+  const completeBlock = useCallback((setId: string, stageId: string) => {
+    setAnswers((a) => {
+      const cur = a[setId]?.[stageId] ?? {};
+      const next = { ...cur, block_cleared: true };
+      if (loadedRef.current) db("assessment_answers").upsert({
+        user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId,
+        score: (cur.score as number) ?? null,
+        why: (cur.why as string) ?? null,
+        make_ten: (cur.makeTen as string) ?? null,
+        somatic: cur.somatic ?? false,
+        blocked: cur.blocked ?? false,
+        somatic_cleared: cur.somatic_cleared ?? false,
+        block_cleared: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,set_id,stage_id" })
+        .then(({ error }) => logErr("completeBlock upsert", error));
+      return { ...a, [setId]: { ...(a[setId] ?? {}), [stageId]: next } };
+    });
+  }, []);
+
+  const scheduleBlockAction = useCallback((setId: string, stageId: string) => {
+    setAnswers((a) => {
+      const cur = a[setId]?.[stageId] ?? {};
+      const next = { ...cur, action_scheduled: true };
+      if (loadedRef.current) db("assessment_answers").upsert({
+        user_id: DEFAULT_USER_ID, set_id: setId, stage_id: stageId,
+        score: (cur.score as number) ?? null,
+        why: (cur.why as string) ?? null,
+        make_ten: (cur.makeTen as string) ?? null,
+        somatic: cur.somatic ?? false,
+        blocked: cur.blocked ?? false,
+        somatic_cleared: cur.somatic_cleared ?? false,
+        block_cleared: cur.block_cleared ?? false,
+        action_scheduled: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,set_id,stage_id" })
+        .then(({ error }) => logErr("scheduleBlockAction upsert", error));
+      return { ...a, [setId]: { ...(a[setId] ?? {}), [stageId]: next } };
     });
   }, []);
 
@@ -329,10 +401,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      answers, excited, impactful, goalAnswers, somaticAnswers, somaticDone, allItems,
+      answers, excited, impactful, goalAnswers, somaticAnswers, somaticDone, blockAnswers, allItems,
       loading, pendingUpdate, setPendingUpdate,
-      setAnswer, setExcitedStage, setImpactfulStage, setGoalAnswer, setSomaticAnswer,
-      completeSomatic, toggleBadge, resetAll, importAll,
+      setAnswer, setExcitedStage, setImpactfulStage, setGoalAnswer, setSomaticAnswer, setBlockAnswer,
+      completeSomatic, completeBlock, scheduleBlockAction, toggleBadge, resetAll, importAll,
     }}>
       {children}
     </AppContext.Provider>

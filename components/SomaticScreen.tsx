@@ -7,11 +7,12 @@ import { useApp } from "@/context/AppContext";
 
 interface Props {
   item: AllItem;
+  fromBlocks?: boolean;
   onComplete: () => void;
   onBack: () => void;
 }
 
-export function SomaticScreen({ item, onComplete, onBack }: Props) {
+export function SomaticScreen({ item, fromBlocks, onComplete, onBack }: Props) {
   const { somaticAnswers, setSomaticAnswer } = useApp();
   const firstUnfilled = SOMATIC_PROMPTS.findIndex(
     (p) => (somaticAnswers[`${item.key}-${p.id}`] ?? "").trim().length === 0
@@ -32,6 +33,11 @@ export function SomaticScreen({ item, onComplete, onBack }: Props) {
           <span className="goal-ctx-set">{item.stage.label} — {item.set.label}</span>
         </div>
       </div>
+      {fromBlocks && (
+        <p className="blk-somatic-note">
+          You may have explored some of this during your block clearing process. Go through the full process here to see what else is present.
+        </p>
+      )}
       {item.ans.why && <p className="goal-ctx-why">&ldquo;{item.ans.why}&rdquo;</p>}
       <div className="goal-prog" style={{ background: "#C0392B22" }}>
         <div className="goal-prog-fill" style={{ width: `${(step / SOMATIC_PROMPTS.length) * 100}%`, background: "#C0392B" }} />
@@ -49,7 +55,7 @@ export function SomaticScreen({ item, onComplete, onBack }: Props) {
         <button className="btn-ghost" onClick={() => step > 0 ? setStep((s) => s - 1) : onBack()}>Back</button>
         <button className="btn-primary" style={{ background: "#C0392B" }} disabled={!canNext}
           onClick={() => isLast ? onComplete() : setStep((s) => s + 1)}>
-          {isLast ? "Complete & Clear Block →" : "Next →"}
+          {isLast ? (fromBlocks ? "Return to Block Clearing →" : "Complete & Clear Block →") : "Next →"}
         </button>
       </div>
     </div>

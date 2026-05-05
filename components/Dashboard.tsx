@@ -7,13 +7,15 @@ import { SETS, STAGES, TIER_META, COLOR, GOAL_PROMPTS } from "@/lib/data";
 import { scoreColor, scoreLabel, scoreCat, getTier } from "@/lib/helpers";
 import { useApp } from "@/context/AppContext";
 import { TierItemCard } from "./TierItemCard";
-import { Counters } from "./Counters";
+import { BirdsEyeGrid } from "./BirdsEyeGrid";
+import { ScaleSummaries } from "./ScaleSummaries";
 
 export function Dashboard() {
   const router = useRouter();
-  const { allItems, answers, excited, impactful, goalAnswers, somaticAnswers, toggleBadge, setPendingUpdate } = useApp();
+  const { allItems, answers, excited, impactful, goalAnswers, somaticAnswers, blockAnswers, toggleBadge, setPendingUpdate, completeBlock } = useApp();
   const [tab, setTab] = useState("tiers");
   const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
+  const [nextStepOpen, setNextStepOpen] = useState(false);
 
   const tierItems = allItems.filter((i) => i.tier !== null);
   const grouped: Record<number, AllItem[]> = { 1: [], 2: [], 3: [], 4: [] };
@@ -30,6 +32,13 @@ export function Dashboard() {
   const somaticItems = allItems.filter((item) =>
     Object.keys(somaticAnswers).some((k) => k.startsWith(item.key))
   );
+  const blockedItems = allItems.filter((item) => !!item.ans.blocked);
+
+  const goalCompleted = goalItems.filter((item) =>
+    GOAL_PROMPTS.every((p) => (goalAnswers[`${item.set.id}-${item.stage.id}-${p.id}`] ?? "").trim().length > 0)
+  ).length;
+  const somaticCompleted = somaticItems.filter((i) => i.somaticCleared).length;
+  const blockedCleared = blockedItems.filter((i) => !!i.ans.block_cleared).length;
 
   const totalAnswered = SETS.reduce(
     (acc, set) => acc + STAGES.filter((stage) => answers[set.id]?.[stage.id]?.score != null).length,
@@ -50,19 +59,19 @@ export function Dashboard() {
     router.push(`/somatic/${item.set.id}/${item.stage.id}`);
   }
 
-  function handleUpdate(item: AllItem) {
-    setPendingUpdate({
-      setIdx: SETS.findIndex((s) => s.id === item.set.id),
-      stageIdx: STAGES.findIndex((s) => s.id === item.stage.id),
-    });
-    router.push("/assessment");
+  function handleBlock(item: AllItem) {
+    router.push(`/blocks/${item.set.id}/${item.stage.id}`);
+  }
+
+  function handleBlockConfirm(item: AllItem) {
+    completeBlock(item.set.id, item.stage.id);
   }
 
   function card(item: AllItem, color?: string) {
     return (
       <TierItemCard key={item.key} item={item} tierColor={color}
-        onBadge={toggleBadge} onGoal={handleGoal} onSomatic={handleSomatic} onUpdate={handleUpdate}
-        goalAnswers={goalAnswers} somaticAnswers={somaticAnswers}
+        onBadge={toggleBadge} onGoal={handleGoal} onSomatic={handleSomatic} onBlock={handleBlock}
+        goalAnswers={goalAnswers} somaticAnswers={somaticAnswers} blockAnswers={blockAnswers}
       />
     );
   }
@@ -85,6 +94,98 @@ export function Dashboard() {
     );
   }
 
+  function renderProgressSections() {
+    const hasAny = goalItems.length > 0 || somaticItems.length > 0 || blockedItems.length > 0;
+    if (!hasAny) return null;
+
+    function progSection(
+      secKey: string,
+      label: string,
+      items: AllItem[],
+      counter: string,
+      color: string,
+      emptyMsg: string,
+    ) {
+      const isOpen = !!openSec[`prog_${secKey}`];
+      return (
+        <div className="prog-section" key={secKey}>
+          <div className="prog-hd" onClick={() => toggle(`prog_${secKey}`)}>
+            <span className="prog-label">{label}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+              <span className="prog-counter" style={{ color }}>{counter}</span>
+              <span className="dd-arr">{isOpen ? "▲" : "▼"}</span>
+            </div>
+          </div>
+          {isOpen && (
+            <div className="dd-body">
+              {items.length === 0
+                ? <p className="dd-empty">{emptyMsg}</p>
+                : items.map((i) => card(i, color))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="prog-wrap">
+        {goalItems.length > 0 && progSection("goals", "🎯 Active Goals", goalItems, `${goalCompleted}/${goalItems.length} completed`, COLOR, "No active goals yet.")}
+        {somaticItems.length > 0 && progSection("somatic", "🎭 Somatic Processes", somaticItems, `${somaticCompleted}/${somaticItems.length} completed`, TIER_META[4].color, "No somatic processes started.")}
+        {blockedItems.length > 0 && progSection("blocked", "❌ Stuck / Blocked", blockedItems, `${blockedCleared}/${blockedItems.length} cleared`, "#C0392B", "No blocked items.")}
+      </div>
+    );
+  }
+
+  function renderNextStep() {
+    if (tierItems.length === 0) return null;
+    const best = [...tierItems].sort((a, b) => {
+      if (a.tier !== b.tier) return (a.tier ?? 9) - (b.tier ?? 9);
+      return (a.ans.score ?? 0) - (b.ans.score ?? 0);
+    })[0];
+    const hasGoal = Object.keys(goalAnswers).some((k) => k.startsWith(`${best.set.id}-${best.stage.id}`));
+    const tm = TIER_META[best.tier!];
+    return (
+      <div className="next-step-wrap">
+        <h2 className="tv-title" style={{ marginBottom: ".75rem" }}>Your Next Step</h2>
+        <div className="next-step-card" style={{ borderLeftColor: tm.color }} onClick={() => setNextStepOpen((o) => !o)}>
+          <div className="next-step-top">
+            <span className="ti-icon">{best.stage.icon}</span>
+            <div className="ti-info">
+              <span className="ti-stage">{best.stage.label}</span>
+              <span className="ti-set">{best.set.label}</span>
+            </div>
+            <div className="ti-badges">
+              {best.isExcited && <span className="tbadge on">❗</span>}
+              {best.isImpact && <span className="tbadge on">💥</span>}
+              {best.hasSomatic && <span className="tbadge on">🎭</span>}
+            </div>
+            <div className="ti-score" style={{ color: scoreColor(best.ans.score) }}>
+              {best.ans.score}/10
+              <span className="ti-sl">{scoreLabel(best.ans.score)}</span>
+            </div>
+            <span className="next-step-arr">{nextStepOpen ? "▲" : "▼"}</span>
+          </div>
+          {nextStepOpen && (
+            <div className="next-step-body" onClick={(e) => e.stopPropagation()}>
+              {best.ans.why && <><p className="ti-why-lbl">Why it&apos;s a {best.ans.score}:</p><p className="ti-why">&ldquo;{best.ans.why}&rdquo;</p></>}
+              {best.ans.makeTen && <><p className="ti-why-lbl">What would make it a 10:</p><p className="ti-why">&ldquo;{best.ans.makeTen}&rdquo;</p></>}
+              <div className="ti-actions">
+                {best.hasSomatic && (
+                  <button className="btn-somatic" onClick={() => handleSomatic(best)}>
+                    🎭 Clear the Block →
+                  </button>
+                )}
+                <button className="btn-start" style={{ background: tm.color }} onClick={() => handleGoal(best)}>
+                  {hasGoal ? "Continue goal →" : "Set Goals →"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   function renderContinueSection() {
     const assessmentQsDone = totalAnswered === SETS.length * STAGES.length;
     const assessmentSelDone = SETS.every((s) => excited[s.id] != null && impactful[s.id] != null);
@@ -98,13 +199,18 @@ export function Dashboard() {
     });
 
     const inProgressSomaticItems = somaticItems.filter((i) => !i.somaticCleared);
+    const scheduledBlockItems = blockedItems.filter((i) => !!i.ans.action_scheduled && !i.ans.action_confirmed && !i.ans.block_cleared);
+    const inProgressBlockItems = blockedItems.filter((i) => !i.ans.block_cleared && !i.ans.action_scheduled &&
+      Object.keys(blockAnswers).some((k) => k.startsWith(i.key))
+    );
 
     const nothingStarted =
       totalAnswered === 0 &&
       Object.keys(goalAnswers).length === 0 &&
       Object.keys(somaticAnswers).length === 0;
     const everythingDone =
-      assessmentComplete && incompleteGoalItems.length === 0 && inProgressSomaticItems.length === 0;
+      assessmentComplete && incompleteGoalItems.length === 0 && inProgressSomaticItems.length === 0 &&
+      scheduledBlockItems.length === 0 && inProgressBlockItems.length === 0;
 
     if (everythingDone) return null;
 
@@ -148,7 +254,8 @@ export function Dashboard() {
       }
     }
 
-    const hasCards = nextTarget || incompleteGoalItems.length > 0 || inProgressSomaticItems.length > 0;
+    const hasCards = nextTarget || incompleteGoalItems.length > 0 || inProgressSomaticItems.length > 0 ||
+      scheduledBlockItems.length > 0 || inProgressBlockItems.length > 0;
     if (!hasCards) return null;
 
     return (
@@ -205,10 +312,42 @@ export function Dashboard() {
           >
             <span className="cc-icon">🎭</span>
             <div className="cc-text">
-              <div className="cc-label">Continue clearing the block on {item.stage.label}</div>
+              <div className="cc-label">Continue somatic process on {item.stage.label}</div>
               <div className="cc-sub">{item.set.label}</div>
             </div>
             <span className="cc-arr">→</span>
+          </div>
+        ))}
+
+        {inProgressBlockItems.map((item) => (
+          <div
+            key={item.key}
+            className="continue-card"
+            onClick={() => router.push(`/blocks/${item.set.id}/${item.stage.id}`)}
+          >
+            <span className="cc-icon">❌</span>
+            <div className="cc-text">
+              <div className="cc-label">Continue block clearing on {item.stage.label}</div>
+              <div className="cc-sub">{item.set.label}</div>
+            </div>
+            <span className="cc-arr">→</span>
+          </div>
+        ))}
+
+        {scheduledBlockItems.map((item) => (
+          <div key={item.key} className="continue-card continue-card-scheduled">
+            <span className="cc-icon">📅</span>
+            <div className="cc-text">
+              <div className="cc-label">Scheduled action — {item.stage.label}</div>
+              <div className="cc-sub">{item.set.label} · Tap to confirm it&apos;s done</div>
+            </div>
+            <button
+              className="btn-primary"
+              style={{ fontSize: ".75rem", padding: ".35rem .875rem" }}
+              onClick={(e) => { e.stopPropagation(); handleBlockConfirm(item); }}
+            >
+              Done ✓
+            </button>
           </div>
         ))}
       </div>
@@ -218,9 +357,6 @@ export function Dashboard() {
   function renderTiersTab() {
     return (
       <div>
-        {dropdown(`goals`, "🎯 Active Goals", goalItems.length, goalItems, COLOR)}
-        {dropdown(`somatic_t`, "🎭 Somatic Processes", somaticItems.length, somaticItems, TIER_META[4].color)}
-        <div className="dash-spacer" />
         {([1, 2, 3, 4] as const).map((t) => {
           if (!grouped[t]?.length) return null;
           const tm = TIER_META[t];
@@ -248,9 +384,6 @@ export function Dashboard() {
   function renderStageTab() {
     return (
       <div>
-        {dropdown(`goals_s`, "🎯 Active Goals", goalItems.length, goalItems, COLOR)}
-        {dropdown(`somatic_s`, "🎭 Somatic Processes", somaticItems.length, somaticItems, TIER_META[4].color)}
-        <div className="dash-spacer" />
         {STAGES.map((stage) => {
           const si = allItems.filter((i) => i.stage.id === stage.id);
           if (!si.length) return null;
@@ -284,9 +417,7 @@ export function Dashboard() {
     ];
     return (
       <div>
-        {dropdown(`goals_sc`, "🎯 Active Goals", goalItems.length, goalItems, COLOR)}
-        {dropdown(`somatic_sc`, "🎭 Somatic Processes", somaticItems.length, somaticItems, TIER_META[4].color)}
-        <div className="dash-spacer" />
+        <ScaleSummaries allItems={allItems} answers={answers} />
         {cats.map((cat) => {
           const ci = allItems.filter((i) => scoreCat(i.ans.score) === cat.id);
           if (!ci.length) return null;
@@ -313,9 +444,6 @@ export function Dashboard() {
   function renderSetTab() {
     return (
       <div>
-        {dropdown(`goals_se`, "🎯 Active Goals", goalItems.length, goalItems, COLOR)}
-        {dropdown(`somatic_se`, "🎭 Somatic Processes", somaticItems.length, somaticItems, TIER_META[4].color)}
-        <div className="dash-spacer" />
         {SETS.map((set) => {
           const si = allItems.filter((i) => i.set.id === set.id);
           if (!si.length) return null;
@@ -391,9 +519,12 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
-      <p className="tv-eyebrow">Your Attention Map</p>
-      <h2 className="tv-title">Here is where your power lives right now.</h2>
-      <Counters allItems={allItems} />
+      <p className="tv-eyebrow">Power Audit</p>
+      <p className="tv-tagline">Power is your ability to clearly articulate your ideas, express yourself, take immediate action and continually move without delay.</p>
+      <h2 className="tv-title">Current Power Snapshot</h2>
+      <BirdsEyeGrid answers={answers} />
+      {renderNextStep()}
+      {renderProgressSections()}
       {renderContinueSection()}
       <div className="tabs">
         {tabs.map((t) => (

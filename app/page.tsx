@@ -1,11 +1,25 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { STAGES } from "@/lib/data";
+import { STAGES, SETS } from "@/lib/data";
 import { Header } from "@/components/Header";
+import { useApp } from "@/context/AppContext";
 
 export default function IntroPage() {
   const router = useRouter();
+  const { answers, excited, impactful, loading } = useApp();
+
+  useEffect(() => {
+    if (loading) return;
+    const allAnswered = SETS.every((set) =>
+      STAGES.every((stage) => answers[set.id]?.[stage.id]?.score != null)
+    );
+    const allSelected = SETS.every((set) => excited[set.id] != null && impactful[set.id] != null);
+    if (allAnswered && allSelected) {
+      router.replace("/dashboard");
+    }
+  }, [loading, answers, excited, impactful, router]);
 
   function begin() {
     router.push("/dashboard");

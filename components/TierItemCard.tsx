@@ -9,14 +9,16 @@ interface Props {
   onBadge?: (setId: string, stageId: string, type: "excited" | "impact") => void;
   onGoal?: (item: AllItem) => void;
   onSomatic?: (item: AllItem) => void;
-  onUpdate?: (item: AllItem) => void;
+  onBlock?: (item: AllItem) => void;
   goalAnswers: GoalAnswers;
   somaticAnswers: SomaticAnswers;
+  blockAnswers?: Record<string, string>;
 }
 
-export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onUpdate, goalAnswers, somaticAnswers }: Props) {
+export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBlock, goalAnswers, somaticAnswers, blockAnswers = {} }: Props) {
   const hasGoal = Object.keys(goalAnswers).some((k) => k.startsWith(`${item.set.id}-${item.stage.id}`));
   const hasSomProc = Object.keys(somaticAnswers).some((k) => k.startsWith(item.key));
+  const hasBlkProc = Object.keys(blockAnswers).some((k) => k.startsWith(item.key));
 
   return (
     <div className="ti">
@@ -46,6 +48,11 @@ export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onUp
       {item.ans.makeTen && <p className="ti-why-lbl">What would make it a 10:</p>}
       {item.ans.makeTen && <p className="ti-why">&ldquo;{item.ans.makeTen}&rdquo;</p>}
       <div className="ti-actions">
+        {item.ans.blocked && !item.ans.block_cleared && onBlock && (
+          <button className="btn-block" onClick={() => onBlock(item)}>
+            ❌ {hasBlkProc ? "Continue clearing ❌" : "Clear the Block ❌"}
+          </button>
+        )}
         {item.hasSomatic && onSomatic && (
           <button className="btn-somatic" onClick={() => onSomatic(item)}>
             🎭 {hasSomProc ? "Continue clearing →" : "Clear the Block →"}
@@ -53,11 +60,8 @@ export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onUp
         )}
         {onGoal && (
           <button className="btn-start" style={{ background: tierColor }} onClick={() => onGoal(item)}>
-            {hasGoal ? "Continue goal →" : "Start here →"}
+            {hasGoal ? "Continue goal →" : "Set Goals →"}
           </button>
-        )}
-        {onUpdate && (
-          <button className="btn-ghost" onClick={() => onUpdate(item)}>Update</button>
         )}
       </div>
     </div>

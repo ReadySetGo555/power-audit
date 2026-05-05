@@ -44,7 +44,7 @@ export function Header() {
 
   return (
     <div className="hdr">
-      <div className="wm">Attention Alignment</div>
+      <a className="wm" href="#" style={{ textDecoration: "none", cursor: "pointer" }}>ATTN: Dashboard</a>
       <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
         {isDashboard && (
           <>
@@ -82,7 +82,6 @@ export function Header() {
             Dashboard
           </button>
         )}
-        <div className="htag">Power Audit</div>
       </div>
     </div>
   );

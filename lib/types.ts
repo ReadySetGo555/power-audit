@@ -5,6 +5,9 @@ export interface Answer {
   somatic?: boolean;
   blocked?: boolean;
   somatic_cleared?: boolean;
+  block_cleared?: boolean;
+  action_scheduled?: boolean;
+  action_confirmed?: boolean;
 }
 
 export type Answers = Record<string, Record<string, Answer>>;
@@ -12,6 +15,7 @@ export type Selections = Record<string, string | null>;
 export type GoalAnswers = Record<string, string>;
 export type SomaticAnswers = Record<string, string>;
 export type SomaticDone = Record<string, boolean>;
+export type BlockAnswers = Record<string, string>;
 
 export interface Stage {
   id: string;

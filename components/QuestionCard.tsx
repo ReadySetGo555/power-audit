@@ -30,7 +30,11 @@ export function QuestionCard({ set, stage, answer, onChange }: Props) {
         <input
           type="range" min={1} max={10} step={1}
           value={answer.score ?? 5}
-          onChange={(e) => onChange("score", Number(e.target.value))}
+          onChange={(e) => {
+            const newScore = Number(e.target.value);
+            onChange("score", newScore);
+            if (newScore === 10 && (answer.score ?? 0) < 10) onChange("makeTen", "");
+          }}
           style={{ "--ac": COLOR } as React.CSSProperties}
         />
         <span className="pole">{set.poleHigh}<br /><b>10</b></span>
@@ -56,7 +60,7 @@ export function QuestionCard({ set, stage, answer, onChange }: Props) {
             </label>
             <label className="check">
               <input type="checkbox" checked={!!answer.blocked} onChange={(e) => onChange("blocked", e.target.checked)} />
-              <span>🎭 I feel stuck / blocked</span>
+              <span>❌ I feel stuck / blocked</span>
             </label>
           </div>
         </div>
