@@ -12,8 +12,12 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## Current status
-**Phase:** Post-launch polish
-**Last working on:** PDF report export — May 5 2026. Implemented lib/pdf.ts using jspdf 4.x + jspdf-autotable 5.x (dynamic import for bundle size). Report button added to Header alongside Export/Import. Report includes: assessment scores grid, tier breakdown, goal plans, somatic processes. Build passes, TypeScript clean.
+**Phase:** Phase 2 complete
+**Last working on:** Phase 2 dashboard redesign + blocks clearing process — May 5 2026. Major rebuild: Birds-eye grid, Your Next Step section, progress counters, 9-step block clearing flow at `/blocks/[setId]/[stageId]`, AI-generated scale summaries via Anthropic API, somatic branch from blocks, auto-redirect to dashboard when assessment complete. Build passes, TypeScript clean, committed and pushed.
+
+**Pending manual steps:**
+1. Run Supabase DB migrations (see Database tables section below)
+2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars for AI summaries to work
 
 ---
 
@@ -45,6 +49,18 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ PWA icons polished — PA monogram (192, 512, 512-maskable, apple-touch-icon) replacing plain purple square
 - ✅ manifest.json polished — id, scope, categories, separate any/maskable icon entries
 - ✅ PDF report export — Report button in dashboard header downloads a PDF with assessment scores grid, tier breakdown, goal plans, and somatic processes (jspdf 4.x + jspdf-autotable 5.x, dynamic import)
+- ✅ Phase 2 — dashboard redesign, blocks clearing, AI summaries:
+  - Birds-eye 4×6 grid with clickable expand panels (stage averages → set breakdown, set averages → stage breakdown), sort toggle
+  - "Your Next Step" section — highest-priority item with inline expand and Set Goals / Clear Block CTAs
+  - Progress sections above tabs: Goals X/Y, Somatic X/Y, Blocked X/Y counters
+  - 9-step block clearing process at `/blocks/[setId]/[stageId]` (actions → behaviors → feelings → thoughts → snapshot → belief → agreement → new_agreement → immediate_action)
+  - Somatic branch from within block clearing (step 3 feelings → `/somatic/...?from=blocks` → returns to blocks without re-triggering somatic completion)
+  - Two completion paths in block clearing: "I'll do it now" (completes immediately) vs "Schedule it for later" (marks scheduled, shows in Continue section)
+  - AI-generated scale summaries per score tier (Limited/Improve/Strength) via `/api/summarize` + Anthropic claude-haiku-4-5-20251001
+  - Header: "ATTN: Dashboard" left link, Power Audit badge removed
+  - Dashboard header: Power Audit eyebrow, tagline, "Current Power Snapshot" title, Counters removed
+  - Return behavior: auto-redirect to dashboard if all 24 answers + all 4 selections complete
+  - Blocked icon changed ❌, makeTen auto-clears when score moves to 10
 
 ---
 
@@ -107,10 +123,32 @@ Envision 👁 → Decide 🤝 → Plan ✏️ → Prepare 🏗️ → Do ✅ →
 
 ## Database tables
 - `user_profiles` — single row for now (DEFAULT_USER_ID)
-- `assessment_answers` — one row per (user, set, stage)
+- `assessment_answers` — one row per (user, set, stage); Phase 2 added columns: `block_cleared boolean`, `action_scheduled boolean`, `action_confirmed boolean`
 - `set_selections` — excited + impactful stage per set
 - `goal_answers` — six prompts per (user, set, stage)
 - `somatic_answers` — four prompts per (user, set, stage)
+- `block_answers` — one row per (user, set, stage, prompt_id); Phase 2 new table
+
+**⚠️ Run these migrations in Supabase SQL editor:**
+```sql
+ALTER TABLE assessment_answers ADD COLUMN block_cleared boolean DEFAULT false;
+ALTER TABLE assessment_answers ADD COLUMN action_scheduled boolean DEFAULT false;
+ALTER TABLE assessment_answers ADD COLUMN action_confirmed boolean DEFAULT false;
+
+CREATE TABLE block_answers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references user_profiles(id),
+  set_id text not null,
+  stage_id text not null,
+  prompt_id text not null,
+  answer text,
+  action_scheduled boolean default false,
+  action_confirmed boolean default false,
+  somatic_branch_used boolean default false,
+  updated_at timestamptz default now(),
+  unique(user_id, set_id, stage_id, prompt_id)
+);
+```
 
 ---
 
@@ -118,7 +156,10 @@ Envision 👁 → Decide 🤝 → Plan ✏️ → Prepare 🏗️ → Do ✅ →
 1. ~~CSV export / import~~ ✅ Done
 2. ~~PWA icon and manifest polish~~ ✅ Done
 3. ~~PDF report export~~ ✅ Done
-4. User auth + multi-user (future phase)
+4. ~~Phase 2 dashboard redesign + blocks clearing~~ ✅ Done
+5. **Run Supabase migrations** (see DB tables section above) — required for Phase 2 to work
+6. **Add ANTHROPIC_API_KEY** to `.env.local` + Vercel env vars — required for AI scale summaries
+7. User auth + multi-user (future phase)
 
 ---
 
@@ -130,4 +171,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 5 2026 — PDF report export complete*
+*Last updated: May 5 2026 — Phase 2 complete (dashboard redesign, blocks clearing, AI summaries)*
