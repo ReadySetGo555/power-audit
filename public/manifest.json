@@ -1,12 +1,15 @@
 {
+  "id": "/",
   "name": "Power Audit",
   "short_name": "Power Audit",
   "description": "Identify where your creative power is leaking across the six stages of the creation cycle.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0A0908",
   "theme_color": "#7C5CBF",
   "orientation": "portrait-primary",
+  "categories": ["productivity", "lifestyle"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -18,7 +21,13 @@
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
