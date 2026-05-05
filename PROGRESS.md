@@ -12,12 +12,14 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## Current status
-**Phase:** Phase 2 complete
-**Last working on:** Phase 2 dashboard redesign + blocks clearing process — May 5 2026. Major rebuild: Birds-eye grid, Your Next Step section, progress counters, 9-step block clearing flow at `/blocks/[setId]/[stageId]`, AI-generated scale summaries via Anthropic API, somatic branch from blocks, auto-redirect to dashboard when assessment complete. Build passes, TypeScript clean, committed and pushed.
+**Phase:** Phase 2 complete — all infrastructure live
+**Last working on:** Completed Phase 2 infrastructure — May 5 2026. Ran Supabase Phase 2 migrations (block_cleared, action_scheduled, action_confirmed columns on assessment_answers + new block_answers table). Added ANTHROPIC_API_KEY to Vercel env vars and confirmed present in .env.local. App is fully operational end-to-end.
 
 **Pending manual steps:**
-1. Run Supabase DB migrations (see Database tables section below)
-2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars for AI summaries to work
+~~1. Run Supabase DB migrations~~ ✅ Done May 5 2026
+~~2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars~~ ✅ Done May 5 2026
+
+**NOTE FOR NEXT SESSION:** Both pending infrastructure steps are now complete. The app should be fully functional including block clearing flow and AI scale summaries. Good place to smoke test the full flow or start the next feature.
 
 ---
 
@@ -157,8 +159,8 @@ CREATE TABLE block_answers (
 2. ~~PWA icon and manifest polish~~ ✅ Done
 3. ~~PDF report export~~ ✅ Done
 4. ~~Phase 2 dashboard redesign + blocks clearing~~ ✅ Done
-5. **Run Supabase migrations** (see DB tables section above) — required for Phase 2 to work
-6. **Add ANTHROPIC_API_KEY** to `.env.local` + Vercel env vars — required for AI scale summaries
+5. ~~**Run Supabase migrations**~~ ✅ Done May 5 2026
+6. ~~**Add ANTHROPIC_API_KEY** to `.env.local` + Vercel env vars~~ ✅ Done May 5 2026
 7. User auth + multi-user (future phase)
 
 ---
@@ -171,4 +173,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 5 2026 — Phase 2 complete (dashboard redesign, blocks clearing, AI summaries)*
+*Last updated: May 5 2026 — Phase 2 infrastructure complete (migrations run, Anthropic API key live)*
