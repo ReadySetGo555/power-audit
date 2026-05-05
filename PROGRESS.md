@@ -44,6 +44,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ CSV export / import (full backup and restore via Header buttons on dashboard)
 - ✅ PWA icons polished — PA monogram (192, 512, 512-maskable, apple-touch-icon) replacing plain purple square
 - ✅ manifest.json polished — id, scope, categories, separate any/maskable icon entries
+- ✅ PDF report export — Report button in dashboard header downloads a PDF with assessment scores grid, tier breakdown, goal plans, and somatic processes (jspdf 4.x + jspdf-autotable 5.x, dynamic import)
 
 ---
 
@@ -54,7 +55,6 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## What's not built yet (deferred)
-- ✅ PDF report export (assessment grid, tier breakdown, goals, somatic processes)
 - ❌ User authentication / login
 - ❌ Multi-user support (schema ready, enforcement deferred)
 - ❌ "Start over" button (explicit, separate from Begin)
@@ -130,4 +130,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 5 2026*
+*Last updated: May 5 2026 — PDF report export complete*
