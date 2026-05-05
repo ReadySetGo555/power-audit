@@ -13,7 +13,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 
 ## Current status
 **Phase:** Post-launch polish
-**Last working on:** Phase 5 PWA icons — May 5 2026. Generated branded PA monogram icons (192, 512, 512-maskable, apple-touch-icon) + updated manifest with id/scope/categories/separate maskable entry.
+**Last working on:** PDF report export prep — May 5 2026. Reviewed full codebase (AppContext, lib/types, lib/data, lib/helpers, Dashboard, Header) to plan PDF export. Plan: install jspdf + jspdf-autotable, create lib/pdf.ts, add "Report" button in Header alongside Export/Import. Report will include assessment grid, tier breakdown, goals, and somatic processes.
 
 ---
 
