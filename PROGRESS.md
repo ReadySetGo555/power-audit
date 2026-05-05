@@ -13,7 +13,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 
 ## Current status
 **Phase:** Post-launch bug fixing and UX improvements
-**Last working on:** Navigation improvements — dashboard button missing from assessment screen
+**Last working on:** Context review session (May 5 2026) — confirmed all navigation improvements complete, PROGRESS.md cleaned up
 
 ---
 
@@ -40,11 +40,11 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ Set tabs for navigation between sets
 - ✅ "Continue where you left off" section on dashboard
 - ✅ Previously answered questions pre-populate when revisited
+- ✅ Dashboard ghost button in assessment header (navigate to dashboard without losing progress)
 
 ---
 
 ## What's in progress / partially working
-- ⚠️ Dashboard button missing from assessment screen (prompt written, not yet sent to Claude Code)
 - ⚠️ PWA caching on iOS — service worker can serve stale version after deploy (fix: force-close and reopen, or reinstall PWA)
 - ⚠️ Vercel auto-deploy occasionally misses commits — manual redeploy via Vercel dashboard as workaround
 
@@ -114,11 +114,10 @@ Envision 👁 → Decide 🤝 → Plan ✏️ → Prepare 🏗️ → Do ✅ →
 ---
 
 ## Next actions (in order)
-1. Add Dashboard button to assessment header (small ghost button, top right)
-2. CSV export / import (Phase 4)
-3. PWA icon and manifest polish (Phase 5)
-4. PDF report (after CSV is done)
-5. User auth + multi-user (future phase)
+1. CSV export / import (Phase 4)
+2. PWA icon and manifest polish (Phase 5)
+3. PDF report (after CSV is done)
+4. User auth + multi-user (future phase)
 
 ---
 
@@ -130,4 +129,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 2026*
+*Last updated: May 5 2026*
