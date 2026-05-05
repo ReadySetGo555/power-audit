@@ -13,7 +13,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 
 ## Current status
 **Phase:** Post-launch polish
-**Last working on:** PDF report export prep — May 5 2026. Reviewed full codebase (AppContext, lib/types, lib/data, lib/helpers, Dashboard, Header) to plan PDF export. Plan: install jspdf + jspdf-autotable, create lib/pdf.ts, add "Report" button in Header alongside Export/Import. Report will include assessment grid, tier breakdown, goals, and somatic processes.
+**Last working on:** PDF report export — May 5 2026. Implemented lib/pdf.ts using jspdf 4.x + jspdf-autotable 5.x (dynamic import for bundle size). Report button added to Header alongside Export/Import. Report includes: assessment scores grid, tier breakdown, goal plans, somatic processes. Build passes, TypeScript clean.
 
 ---
 
@@ -54,7 +54,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## What's not built yet (deferred)
-- ❌ PDF report export
+- ✅ PDF report export (assessment grid, tier breakdown, goals, somatic processes)
 - ❌ User authentication / login
 - ❌ Multi-user support (schema ready, enforcement deferred)
 - ❌ "Start over" button (explicit, separate from Begin)
@@ -117,7 +117,7 @@ Envision 👁 → Decide 🤝 → Plan ✏️ → Prepare 🏗️ → Do ✅ →
 ## Next actions (in order)
 1. ~~CSV export / import~~ ✅ Done
 2. ~~PWA icon and manifest polish~~ ✅ Done
-3. PDF report export
+3. ~~PDF report export~~ ✅ Done
 4. User auth + multi-user (future phase)
 
 ---

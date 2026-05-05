@@ -1,20 +1,31 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { exportCSV, parseCSV } from "@/lib/csv";
+import { generatePDF } from "@/lib/pdf";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const isDashboard = pathname === "/dashboard";
   const isAssessment = pathname === "/assessment";
-  const { answers, excited, impactful, goalAnswers, somaticAnswers, importAll } = useApp();
+  const { answers, excited, impactful, goalAnswers, somaticAnswers, somaticDone, importAll } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   function handleExport() {
     exportCSV(answers, excited, impactful, goalAnswers, somaticAnswers);
+  }
+
+  async function handleReport() {
+    setGeneratingPDF(true);
+    try {
+      await generatePDF(answers, excited, impactful, goalAnswers, somaticAnswers, somaticDone);
+    } finally {
+      setGeneratingPDF(false);
+    }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -37,6 +48,14 @@ export function Header() {
       <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
         {isDashboard && (
           <>
+            <button
+              className="btn-ghost"
+              style={{ fontSize: ".78rem", padding: ".4rem 1rem" }}
+              onClick={handleReport}
+              disabled={generatingPDF}
+            >
+              {generatingPDF ? "Generating…" : "Report"}
+            </button>
             <button
               className="btn-ghost"
               style={{ fontSize: ".78rem", padding: ".4rem 1rem" }}
