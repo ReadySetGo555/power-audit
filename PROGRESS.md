@@ -12,14 +12,14 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## Current status
-**Phase:** Phase 2 complete — dashboard redesigned, tabs removed
-**Last working on:** Dashboard tab removal + scale section redesign — May 6 2026.
+**Phase:** Phase 2 complete — dashboard redesigned, UI polished
+**Last working on:** UI polish pass — May 6 2026.
 
 **Pending manual steps:**
 ~~1. Run Supabase DB migrations~~ ✅ Done May 5 2026
 ~~2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars~~ ✅ Done May 5 2026
 
-**NOTE FOR NEXT SESSION:** Dashboard is now a single scrollable view (no tabs). AI scale summaries are wired up but the Anthropic account tied to the API key is out of credits — add credits at console.anthropic.com to activate them. Otherwise the app is fully functional.
+**NOTE FOR NEXT SESSION:** Dashboard is a single scrollable view (no tabs). AI scale summaries are wired up but the Anthropic account tied to the API key is out of credits — add credits at console.anthropic.com to activate them. Otherwise the app is fully functional.
 
 ---
 
@@ -33,6 +33,8 @@ A self-guided assessment app built on the Attention Alignment Process framework.
   - Progress sections (Goals/Somatic/Blocked) with X/Y counters
   - Tiers section (1–4, same cards and logic)
   - Scale section — three flat outlined boxes (Strength/Improve/Limited); each row shows score, set/stage label, and user's "why" answer; sorted score desc then stage order; only items with a why answer shown
+- ✅ Birds-eye grid — individual score cells are now clickable and navigate directly to that stage in the assessment
+- ✅ TierItemCard polish (May 6 2026): badges show as read-only when not interactive; ❌ blocked badge visible on cards; button labels clarified (PDF Report / CSV Export / CSV Import); somatic button renamed "Somatic Clearing →"; optional Update button prop added
 - ✅ 3 counters (biggest deficit by set, by stage, blocks overcome/total)
 - ✅ Tier 1 sorted: both ❗💥 first, then ❗ only, then 💥 only
 - ✅ Somatic process (4 steps: identify → agreement → rewrite → commit)
@@ -176,4 +178,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 6 2026 — Dashboard tabs removed, single scrollable view, scale section redesigned*
+*Last updated: May 6 2026 — UI polish pass complete, all changes live on Vercel*
