@@ -12,8 +12,8 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## Current status
-**Phase:** Phase 2 complete — dashboard redesigned, UI polished
-**Last working on:** UI polish pass — May 6 2026.
+**Phase:** Phase 2 complete — assessment flow + dashboard further polished
+**Last working on:** Assessment UX + tier/somatic fixes — May 6 2026.
 
 **Pending manual steps:**
 ~~1. Run Supabase DB migrations~~ ✅ Done May 5 2026
@@ -34,7 +34,10 @@ A self-guided assessment app built on the Attention Alignment Process framework.
   - Tiers section (1–4, same cards and logic)
   - Scale section — three flat outlined boxes (Strength/Improve/Limited); each row shows score, set/stage label, and user's "why" answer; sorted score desc then stage order; only items with a why answer shown
 - ✅ Birds-eye grid — individual score cells are now clickable and navigate directly to that stage in the assessment
-- ✅ TierItemCard polish (May 6 2026): badges show as read-only when not interactive; ❌ blocked badge visible on cards; button labels clarified (PDF Report / CSV Export / CSV Import); somatic button renamed "Somatic Clearing →"; optional Update button prop added
+- ✅ TierItemCard polish (May 6 2026): badges show as read-only when not interactive; ❌ blocked badge visible on cards; button labels clarified (PDF Report / CSV Export / CSV Import); somatic button renamed "Somatic Clearing →"; optional Update button prop added; "Set Goals →" only shows when item is excited/impactful and has no active somatic or block
+- ✅ Assessment page refactored (May 6 2026): ❗/💥 selection buttons always visible in the stage nav row (greyed out until all 6 stages answered); inline selection picker replaces the old full-screen selection screens
+- ✅ Somatic Processes counter fixed: shows all items with somatic checkbox ticked (not just those who started the process); clears correctly on somatic_cleared or somaticCleared
+- ✅ Tiers 1–3 always visible even when empty (dimmed with — count); Tier 4 removed from tiers section; "Update Assessment" block added at bottom of tiers as a quiet nav link
 - ✅ 3 counters (biggest deficit by set, by stage, blocks overcome/total)
 - ✅ Tier 1 sorted: both ❗💥 first, then ❗ only, then 💥 only
 - ✅ Somatic process (4 steps: identify → agreement → rewrite → commit)
@@ -178,4 +181,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 6 2026 — UI polish pass complete, all changes live on Vercel*
+*Last updated: May 6 2026 — Assessment UX + tier/somatic fixes, all live on Vercel*
