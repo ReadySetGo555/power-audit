@@ -32,6 +32,11 @@ export function Dashboard() {
   );
   const blockedItems = allItems.filter((item) => !!item.ans.blocked);
 
+  // All items where somatic or blocked was ticked in the assessment
+  const allSomaticFlagged = allItems.filter((item) => !!item.ans.somatic);
+  // "Cleared" = somatic_cleared flag set OR block_cleared flag set
+  const somaticFlaggedCleared = allSomaticFlagged.filter((i) => !!(i.ans.somatic_cleared || i.somaticCleared)).length;
+
   const goalCompleted = goalItems.filter((item) =>
     GOAL_PROMPTS.every((p) => (goalAnswers[`${item.set.id}-${item.stage.id}-${p.id}`] ?? "").trim().length > 0)
   ).length;
@@ -108,7 +113,7 @@ export function Dashboard() {
     return (
       <div className="prog-wrap">
         {goalItems.length > 0 && progSection("goals", "🎯 Active Goals", goalItems, `${goalCompleted}/${goalItems.length} completed`, COLOR, "No active goals yet.")}
-        {somaticItems.length > 0 && progSection("somatic", "🎭 Somatic Processes", somaticItems, `${somaticCompleted}/${somaticItems.length} cleared`, TIER_META[4].color, "No somatic processes started.")}
+        {allSomaticFlagged.length > 0 && progSection("somatic", "🎭 Somatic Processes", allSomaticFlagged, `${somaticFlaggedCleared}/${allSomaticFlagged.length} cleared`, TIER_META[4].color, "No somatic processes started.")}
         {blockedItems.length > 0 && progSection("blocked", "❌ Stuck / Blocked", blockedItems, `${blockedCleared}/${blockedItems.length} cleared`, "#C0392B", "No blocked items.")}
       </div>
     );
@@ -358,7 +363,7 @@ export function Dashboard() {
 
     return (
       <div>
-        {([1, 2, 3, 4] as const).map((t) => {
+        {([1, 2, 3] as const).map((t) => {
           if (!grouped[t]?.length) return null;
           const tm = TIER_META[t];
           const isOpen = !!openSec[`tier${t}`];
@@ -383,14 +388,14 @@ export function Dashboard() {
         {/* Update Assessment — styled identically to a tier dropdown */}
         <div
           className="tier-block"
-          style={{ borderLeftColor: COLOR, cursor: "pointer" }}
+          style={{ borderLeftColor: "#3A3228", cursor: "pointer" }}
           onClick={() => router.push("/assessment")}
         >
           <div className="tier-hd">
             <div className="tier-hd-left">
-              <span className="tier-num" style={{ background: COLOR }}>✏️</span>
+              <span className="tier-num" style={{ background: "#3A3228" }}>✏️</span>
               <div>
-                <div className="tier-label">Update Assessment</div>
+                <div className="tier-label" style={{ color: "#7A6E62" }}>Update Assessment</div>
                 <div className="tier-desc">Revisit any question to change your score, why, or somatic flags</div>
               </div>
             </div>

@@ -67,7 +67,7 @@ export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBl
             🎭 {hasSomProc ? "Continue Somatic Clearing →" : "Somatic Clearing →"}
           </button>
         )}
-        {onGoal && (
+        {onGoal && (item.isExcited || item.isImpact) && !item.hasSomatic && !(!!item.ans.blocked && !item.ans.block_cleared) && (
           <button className="btn-start" style={{ background: tierColor }} onClick={() => onGoal(item)}>
             {hasGoal ? "Continue goal →" : "Set Goals →"}
           </button>
