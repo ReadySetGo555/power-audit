@@ -364,23 +364,23 @@ export function Dashboard() {
     return (
       <div>
         {([1, 2, 3] as const).map((t) => {
-          if (!grouped[t]?.length) return null;
           const tm = TIER_META[t];
           const isOpen = !!openSec[`tier${t}`];
-          const count = grouped[t].length;
+          const count = grouped[t]?.length ?? 0;
+          const isEmpty = count === 0;
           return (
-            <div key={t} className="tier-block" style={{ borderLeftColor: tm.color }}>
-              <div className="tier-hd" onClick={() => toggle(`tier${t}`)}>
+            <div key={t} className="tier-block" style={{ borderLeftColor: isEmpty ? "#2A2218" : tm.color }}>
+              <div className="tier-hd" onClick={() => !isEmpty && toggle(`tier${t}`)}>
                 <div className="tier-hd-left">
-                  <span className="tier-num" style={{ background: tm.color }}>{count}</span>
+                  <span className="tier-num" style={{ background: isEmpty ? "#2A2218" : tm.color }}>{isEmpty ? "—" : count}</span>
                   <div>
-                    <div className="tier-label">{tm.label}</div>
+                    <div className="tier-label" style={{ color: isEmpty ? "#3A3228" : undefined }}>{tm.label}</div>
                     <div className="tier-desc">{tm.desc}</div>
                   </div>
                 </div>
-                <span className="tier-tog">{isOpen ? "▲" : "▼"}</span>
+                {!isEmpty && <span className="tier-tog">{isOpen ? "▲" : "▼"}</span>}
               </div>
-              {isOpen && <div className="tier-body">{grouped[t].map((i) => tierCard(i, tm.color))}</div>}
+              {isOpen && !isEmpty && <div className="tier-body">{grouped[t].map((i) => tierCard(i, tm.color))}</div>}
             </div>
           );
         })}
