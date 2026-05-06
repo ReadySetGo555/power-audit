@@ -19,7 +19,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ~~1. Run Supabase DB migrations~~ ✅ Done May 5 2026
 ~~2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars~~ ✅ Done May 5 2026
 
-**NOTE FOR NEXT SESSION:** Dashboard is a single scrollable view (no tabs). AI scale summaries are wired up but the Anthropic account tied to the API key is out of credits — add credits at console.anthropic.com to activate them. Otherwise the app is fully functional.
+**NOTE FOR NEXT SESSION:** Dashboard is a single scrollable view (no tabs). App is fully functional.
 
 ---
 
@@ -58,14 +58,13 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ PWA icons polished — PA monogram (192, 512, 512-maskable, apple-touch-icon) replacing plain purple square
 - ✅ manifest.json polished — id, scope, categories, separate any/maskable icon entries
 - ✅ PDF report export — Report button in dashboard header downloads a PDF with assessment scores grid, tier breakdown, goal plans, and somatic processes (jspdf 4.x + jspdf-autotable 5.x, dynamic import)
-- ✅ Phase 2 — dashboard redesign, blocks clearing, AI summaries:
+- ✅ Phase 2 — dashboard redesign, blocks clearing:
   - Birds-eye 4×6 grid with clickable expand panels (stage averages → set breakdown, set averages → stage breakdown), sort toggle
   - "Your Next Step" section — highest-priority item with inline expand and Set Goals / Clear Block CTAs
   - Progress sections above tabs: Goals X/Y, Somatic X/Y, Blocked X/Y counters
   - 9-step block clearing process at `/blocks/[setId]/[stageId]` (actions → behaviors → feelings → thoughts → snapshot → belief → agreement → new_agreement → immediate_action)
   - Somatic branch from within block clearing (step 3 feelings → `/somatic/...?from=blocks` → returns to blocks without re-triggering somatic completion)
   - Two completion paths in block clearing: "I'll do it now" (completes immediately) vs "Schedule it for later" (marks scheduled, shows in Continue section)
-  - AI-generated scale summaries wired up via `/api/summarize` + Anthropic claude-haiku-4-5-20251001 (inactive — account out of credits; add credits at console.anthropic.com)
   - Header: "ATTN: Dashboard" left link, Power Audit badge removed
   - Dashboard header: Power Audit eyebrow, tagline, "Current Power Snapshot" title, Counters removed
   - Return behavior: auto-redirect to dashboard if all 24 answers + all 4 selections complete
@@ -74,7 +73,6 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## What's in progress / partially working
-- ⚠️ AI scale summaries — wired up but Anthropic account is out of credits; add credits at console.anthropic.com to activate
 - ⚠️ PWA caching on iOS — service worker can serve stale version after deploy (fix: force-close and reopen, or reinstall PWA)
 - ⚠️ Vercel auto-deploy occasionally misses commits — manual redeploy via Vercel dashboard as workaround
 
