@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SETS, STAGES } from "@/lib/data";
 import { scoreColor } from "@/lib/helpers";
+import { useApp } from "@/context/AppContext";
 import type { Answers } from "@/lib/types";
 
 interface Props {
@@ -26,6 +28,8 @@ function fmt(n: number | null): string {
 export function BirdsEyeGrid({ answers }: Props) {
   const [openPanel, setOpenPanel] = useState<OpenPanel | null>(null);
   const [sortScore, setSortScore] = useState(false);
+  const router = useRouter();
+  const { setPendingUpdate } = useApp();
 
   function togglePanel(type: PanelType, id: string) {
     if (openPanel?.type === type && openPanel.id === id) {
@@ -34,6 +38,14 @@ export function BirdsEyeGrid({ answers }: Props) {
       setOpenPanel({ type, id });
       setSortScore(false);
     }
+  }
+
+  function jumpToStage(setId: string, stageId: string) {
+    const setIdx = SETS.findIndex((s) => s.id === setId);
+    const stageIdx = STAGES.findIndex((s) => s.id === stageId);
+    if (setIdx < 0 || stageIdx < 0) return;
+    setPendingUpdate({ setIdx, stageIdx, phase: "questions" });
+    router.push("/assessment");
   }
 
   // Pre-compute set averages and stage averages
@@ -125,7 +137,14 @@ export function BirdsEyeGrid({ answers }: Props) {
             <div className="beg-row-hd">{set.label}</div>
             {STAGES.map((stage) => {
               const score = answers[set.id]?.[stage.id]?.score ?? null;
-              return <ScoreCell key={`${set.id}-${stage.id}`} score={score} />;
+              return (
+                <ScoreCell
+                  key={`${set.id}-${stage.id}`}
+                  score={score}
+                  clickable
+                  onClick={() => jumpToStage(set.id, stage.id)}
+                />
+              );
             })}
             <ScoreCell
               score={setAvgs[si]}

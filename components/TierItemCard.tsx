@@ -10,12 +10,13 @@ interface Props {
   onGoal?: (item: AllItem) => void;
   onSomatic?: (item: AllItem) => void;
   onBlock?: (item: AllItem) => void;
+  onUpdate?: (item: AllItem) => void;
   goalAnswers: GoalAnswers;
   somaticAnswers: SomaticAnswers;
   blockAnswers?: Record<string, string>;
 }
 
-export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBlock, goalAnswers, somaticAnswers, blockAnswers = {} }: Props) {
+export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBlock, onUpdate, goalAnswers, somaticAnswers, blockAnswers = {} }: Props) {
   const hasGoal = Object.keys(goalAnswers).some((k) => k.startsWith(`${item.set.id}-${item.stage.id}`));
   const hasSomProc = Object.keys(somaticAnswers).some((k) => k.startsWith(item.key));
   const hasBlkProc = Object.keys(blockAnswers).some((k) => k.startsWith(item.key));
@@ -29,14 +30,22 @@ export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBl
           <span className="ti-set">{item.set.label}</span>
         </div>
         <div className="ti-badges">
-          {onBadge && (
+          {onBadge ? (
             <>
               <span className={"tbadge" + (item.isExcited ? " on" : "")} title="Excited" onClick={() => onBadge(item.set.id, item.stage.id, "excited")}>❗</span>
               <span className={"tbadge" + (item.isImpact ? " on" : "")} title="Impactful" onClick={() => onBadge(item.set.id, item.stage.id, "impact")}>💥</span>
             </>
+          ) : (
+            <>
+              {item.isExcited && <span className="tbadge on" style={{ cursor: "default" }} title="Excited">❗</span>}
+              {item.isImpact && <span className="tbadge on" style={{ cursor: "default" }} title="Impactful">💥</span>}
+            </>
           )}
-          {item.hasSomatic && <span className="tbadge on">🎭</span>}
-          {item.somaticCleared && <span className="tbadge on" style={{ opacity: 1 }}>✅</span>}
+          {item.hasSomatic && <span className="tbadge on" style={{ cursor: "default" }} title="Somatic">🎭</span>}
+          {!!item.ans.blocked && !item.ans.block_cleared && (
+            <span className="tbadge on" style={{ cursor: "default", color: "#C0392B" }} title="Blocked">❌</span>
+          )}
+          {item.somaticCleared && <span className="tbadge on" style={{ opacity: 1, cursor: "default" }} title="Somatic cleared">✅</span>}
         </div>
         <div className="ti-score" style={{ color: scoreColor(item.ans.score) }}>
           {item.ans.score}/10
@@ -50,17 +59,22 @@ export function TierItemCard({ item, tierColor, onBadge, onGoal, onSomatic, onBl
       <div className="ti-actions">
         {item.ans.blocked && !item.ans.block_cleared && onBlock && (
           <button className="btn-block" onClick={() => onBlock(item)}>
-            ❌ {hasBlkProc ? "Continue clearing ❌" : "Clear the Block ❌"}
+            ❌ {hasBlkProc ? "Continue clearing" : "Clear the Block"}
           </button>
         )}
         {item.hasSomatic && onSomatic && (
           <button className="btn-somatic" onClick={() => onSomatic(item)}>
-            🎭 {hasSomProc ? "Continue clearing →" : "Clear the Block →"}
+            🎭 {hasSomProc ? "Continue Somatic Clearing →" : "Somatic Clearing →"}
           </button>
         )}
         {onGoal && (
           <button className="btn-start" style={{ background: tierColor }} onClick={() => onGoal(item)}>
             {hasGoal ? "Continue goal →" : "Set Goals →"}
+          </button>
+        )}
+        {onUpdate && (
+          <button className="btn-ghost" style={{ fontSize: ".75rem", padding: ".35rem .9rem" }} onClick={() => onUpdate(item)}>
+            Update
           </button>
         )}
       </div>

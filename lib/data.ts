@@ -71,7 +71,7 @@ export const BLOCK_PROMPTS = [
 ];
 
 export const TIER_META: Record<number, TierMeta> = {
-  1: { label: "Tier 1 — Urgent",           desc: "Excited or impactful + somatic block. Clear the block first.", color: "#C0392B" },
+  1: { label: "Tier 1 — Urgent",           desc: "Excited or impactful + somatic/block. Clear the block first.", color: "#C0392B" },
   2: { label: "Tier 2 — Important",        desc: "Both excited and impactful. Ready to build.",                  color: "#E67E22" },
   3: { label: "Tier 3 — Influential",      desc: "Excited or impactful. Strong improvements available.",         color: "#3498DB" },
   4: { label: "Tier 4 — Somatic / Blocks", desc: "Flagged but not chosen. Revisit when you have capacity.",     color: "#7C5CBF" },

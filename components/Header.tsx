@@ -54,21 +54,21 @@ export function Header() {
               onClick={handleReport}
               disabled={generatingPDF}
             >
-              {generatingPDF ? "Generating…" : "Report"}
+              {generatingPDF ? "Generating…" : "PDF Report"}
             </button>
             <button
               className="btn-ghost"
               style={{ fontSize: ".78rem", padding: ".4rem 1rem" }}
               onClick={handleExport}
             >
-              Export
+              CSV Export
             </button>
             <button
               className="btn-ghost"
               style={{ fontSize: ".78rem", padding: ".4rem 1rem" }}
               onClick={() => fileRef.current?.click()}
             >
-              Import
+              CSV Import
             </button>
             <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleFileChange} />
           </>

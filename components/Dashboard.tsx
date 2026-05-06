@@ -35,7 +35,7 @@ export function Dashboard() {
   const goalCompleted = goalItems.filter((item) =>
     GOAL_PROMPTS.every((p) => (goalAnswers[`${item.set.id}-${item.stage.id}-${p.id}`] ?? "").trim().length > 0)
   ).length;
-  const somaticCompleted = somaticItems.filter((i) => i.somaticCleared).length;
+  const somaticCompleted = somaticItems.filter((i) => i.somaticCleared || !!i.ans.somatic_cleared).length;
   const blockedCleared = blockedItems.filter((i) => !!i.ans.block_cleared).length;
 
   const totalAnswered = SETS.reduce(
@@ -108,7 +108,7 @@ export function Dashboard() {
     return (
       <div className="prog-wrap">
         {goalItems.length > 0 && progSection("goals", "🎯 Active Goals", goalItems, `${goalCompleted}/${goalItems.length} completed`, COLOR, "No active goals yet.")}
-        {somaticItems.length > 0 && progSection("somatic", "🎭 Somatic Processes", somaticItems, `${somaticCompleted}/${somaticItems.length} completed`, TIER_META[4].color, "No somatic processes started.")}
+        {somaticItems.length > 0 && progSection("somatic", "🎭 Somatic Processes", somaticItems, `${somaticCompleted}/${somaticItems.length} cleared`, TIER_META[4].color, "No somatic processes started.")}
         {blockedItems.length > 0 && progSection("blocked", "❌ Stuck / Blocked", blockedItems, `${blockedCleared}/${blockedItems.length} cleared`, "#C0392B", "No blocked items.")}
       </div>
     );
@@ -332,40 +332,83 @@ export function Dashboard() {
   }
 
   function renderTiersSection() {
+    function tierCard(item: AllItem, color: string) {
+      return (
+        <TierItemCard
+          key={item.key}
+          item={item}
+          tierColor={color}
+          onGoal={handleGoal}
+          onSomatic={handleSomatic}
+          onBlock={handleBlock}
+          onUpdate={(i) => {
+            setPendingUpdate({
+              setIdx: SETS.findIndex((s) => s.id === i.set.id),
+              stageIdx: STAGES.findIndex((s) => s.id === i.stage.id),
+              phase: "questions",
+            });
+            router.push("/assessment");
+          }}
+          goalAnswers={goalAnswers}
+          somaticAnswers={somaticAnswers}
+          blockAnswers={blockAnswers}
+        />
+      );
+    }
+
     return (
       <div>
         {([1, 2, 3, 4] as const).map((t) => {
           if (!grouped[t]?.length) return null;
           const tm = TIER_META[t];
           const isOpen = !!openSec[`tier${t}`];
+          const count = grouped[t].length;
           return (
             <div key={t} className="tier-block" style={{ borderLeftColor: tm.color }}>
               <div className="tier-hd" onClick={() => toggle(`tier${t}`)}>
                 <div className="tier-hd-left">
-                  <span className="tier-num" style={{ background: tm.color }}>{t}</span>
+                  <span className="tier-num" style={{ background: tm.color }}>{count}</span>
                   <div>
                     <div className="tier-label">{tm.label}</div>
                     <div className="tier-desc">{tm.desc}</div>
                   </div>
                 </div>
-                <span className="tier-tog">{isOpen ? "▲" : "▼"} {grouped[t].length}</span>
+                <span className="tier-tog">{isOpen ? "▲" : "▼"}</span>
               </div>
-              {isOpen && <div className="tier-body">{grouped[t].map((i) => card(i, tm.color))}</div>}
+              {isOpen && <div className="tier-body">{grouped[t].map((i) => tierCard(i, tm.color))}</div>}
             </div>
           );
         })}
+
+        {/* Update Assessment — styled identically to a tier dropdown */}
+        <div
+          className="tier-block"
+          style={{ borderLeftColor: COLOR, cursor: "pointer" }}
+          onClick={() => router.push("/assessment")}
+        >
+          <div className="tier-hd">
+            <div className="tier-hd-left">
+              <span className="tier-num" style={{ background: COLOR }}>✏️</span>
+              <div>
+                <div className="tier-label">Update Assessment</div>
+                <div className="tier-desc">Revisit any question to change your score, why, or somatic flags</div>
+              </div>
+            </div>
+            <span className="tier-tog">→</span>
+          </div>
+        </div>
       </div>
     );
   }
 
   function renderScaleSection() {
     const cats = [
-      { id: "strength", label: "💪🏼 Strength", color: "#2ECC71" },
-      { id: "improve",  label: "⚠️ Improve",   color: "#E67E22" },
-      { id: "limited",  label: "🔥 Limited",    color: "#C0392B" },
+      { id: "strength", label: "💪🏼 Strengths",    color: "#2ECC71" },
+      { id: "improve",  label: "⚠️ Improvements",  color: "#E67E22" },
+      { id: "limited",  label: "🔥 Limitations",   color: "#C0392B" },
     ];
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
         {cats.map((cat) => {
           const ci = [...allItems
             .filter((i) => scoreCat(i.ans.score) === cat.id && (i.ans.why ?? "").trim().length > 0)]
@@ -375,47 +418,70 @@ export function Dashboard() {
               return STAGES.findIndex((s) => s.id === a.stage.id) - STAGES.findIndex((s) => s.id === b.stage.id);
             });
           if (!ci.length) return null;
+          const isOpen = !!openSec[`scale_${cat.id}`];
           return (
             <div key={cat.id} style={{
               border: `1px solid ${cat.color}`,
               borderRadius: ".875rem",
               background: "#121008",
-              padding: "1rem 1.25rem",
+              overflow: "hidden",
             }}>
-              <div style={{
-                fontFamily: "var(--font-syne)",
-                fontSize: ".75rem",
-                color: cat.color,
-                letterSpacing: ".05em",
-                marginBottom: ".875rem",
-              }}>
-                {cat.label}
+              <div
+                onClick={() => toggle(`scale_${cat.id}`)}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "1rem 1.25rem",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{
+                  fontFamily: "var(--font-syne)",
+                  fontSize: ".85rem",
+                  color: cat.color,
+                  letterSpacing: ".05em",
+                  fontWeight: 600,
+                }}>
+                  {cat.label}
+                </span>
+                <span style={{ fontSize: ".75rem", color: cat.color }}>
+                  {ci.length} {isOpen ? "▲" : "▼"}
+                </span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
-                {ci.map((item) => (
-                  <div key={item.key} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                    <div style={{
-                      fontFamily: "var(--font-cormorant)",
-                      fontSize: "2rem",
-                      lineHeight: 1,
-                      color: cat.color,
-                      minWidth: "2.5rem",
-                      textAlign: "center",
-                      flexShrink: 0,
-                    }}>
-                      {item.ans.score}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "var(--font-syne)", fontSize: ".75rem", color: "#8A7E72", marginBottom: ".25rem" }}>
-                        {item.set.label} / {item.stage.label}
+              {isOpen && (
+                <div style={{
+                  padding: ".875rem 1.25rem 1rem",
+                  borderTop: `1px solid ${cat.color}33`,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: ".875rem",
+                }}>
+                  {ci.map((item) => (
+                    <div key={item.key} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                      <div style={{
+                        fontFamily: "var(--font-cormorant)",
+                        fontSize: "2rem",
+                        lineHeight: 1,
+                        color: cat.color,
+                        minWidth: "2.5rem",
+                        textAlign: "center",
+                        flexShrink: 0,
+                      }}>
+                        {item.ans.score}
                       </div>
-                      <div style={{ fontStyle: "italic", color: "#5A5248", fontSize: ".8rem", lineHeight: 1.5 }}>
-                        {item.ans.why}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--font-syne)", fontSize: ".75rem", color: "#8A7E72", marginBottom: ".25rem" }}>
+                          {item.set.label} / {item.stage.label}
+                        </div>
+                        <div style={{ fontStyle: "italic", color: "#5A5248", fontSize: ".8rem", lineHeight: 1.5 }}>
+                          {item.ans.why}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
@@ -425,8 +491,8 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
-      <p className="tv-eyebrow">Power Audit</p>
-      <p className="tv-tagline">Power is your ability to clearly articulate your ideas, express yourself, take immediate action and continually move without delay.</p>
+      <h2 className="tv-title" style={{ color: COLOR, marginBottom: ".5rem" }}>Power Audit</h2>
+      <p className="tv-tagline" style={{ fontStyle: "normal" }}>Power is your ability to clearly articulate your ideas, express yourself, take immediate action and continually move without delay.</p>
       <h2 className="tv-title">Current Power Snapshot</h2>
       <BirdsEyeGrid answers={answers} />
       {renderContinueSection()}
