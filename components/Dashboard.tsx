@@ -4,16 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AllItem } from "@/lib/types";
 import { SETS, STAGES, TIER_META, COLOR, GOAL_PROMPTS } from "@/lib/data";
-import { scoreColor, scoreLabel, scoreCat, getTier } from "@/lib/helpers";
+import { scoreColor, scoreLabel, scoreCat } from "@/lib/helpers";
 import { useApp } from "@/context/AppContext";
 import { TierItemCard } from "./TierItemCard";
 import { BirdsEyeGrid } from "./BirdsEyeGrid";
-import { ScaleSummaries } from "./ScaleSummaries";
 
 export function Dashboard() {
   const router = useRouter();
   const { allItems, answers, excited, impactful, goalAnswers, somaticAnswers, blockAnswers, toggleBadge, setPendingUpdate, completeBlock } = useApp();
-  const [tab, setTab] = useState("tiers");
   const [openSec, setOpenSec] = useState<Record<string, boolean>>({});
   const [nextStepOpen, setNextStepOpen] = useState(false);
 
@@ -44,8 +42,6 @@ export function Dashboard() {
     (acc, set) => acc + STAGES.filter((stage) => answers[set.id]?.[stage.id]?.score != null).length,
     0
   );
-  const assessmentTabLabel =
-    totalAnswered < SETS.length * STAGES.length ? "Finish Full Assessment" : "View Assessment Birds-eye";
 
   function toggle(key: string) {
     setOpenSec((o) => ({ ...o, [key]: !o[key] }));
@@ -73,24 +69,6 @@ export function Dashboard() {
         onBadge={toggleBadge} onGoal={handleGoal} onSomatic={handleSomatic} onBlock={handleBlock}
         goalAnswers={goalAnswers} somaticAnswers={somaticAnswers} blockAnswers={blockAnswers}
       />
-    );
-  }
-
-  function dropdown(secKey: string, label: string, count: number, items: AllItem[], color: string) {
-    return (
-      <>
-        <div className="dash-dropdown" onClick={() => toggle(secKey)}>
-          <span>{label} <span className="dd-count">{count}</span></span>
-          <span className="dd-arr">{openSec[secKey] ? "▲" : "▼"}</span>
-        </div>
-        {openSec[secKey] && (
-          <div className="dd-body">
-            {items.length === 0
-              ? <p className="dd-empty">{label.includes("Goal") ? "No active goals yet." : "No somatic processes started."}</p>
-              : items.map((i) => card(i, color))}
-          </div>
-        )}
-      </>
     );
   }
 
@@ -225,7 +203,6 @@ export function Dashboard() {
       );
     }
 
-    // Find next assessment target
     let nextTarget: { setIdx: number; stageIdx: number; phase: "questions" | "excited" | "impact" } | null = null;
     if (!assessmentComplete) {
       outer: for (let si = 0; si < SETS.length; si++) {
@@ -354,7 +331,7 @@ export function Dashboard() {
     );
   }
 
-  function renderTiersTab() {
+  function renderTiersSection() {
     return (
       <div>
         {([1, 2, 3, 4] as const).map((t) => {
@@ -381,141 +358,70 @@ export function Dashboard() {
     );
   }
 
-  function renderStageTab() {
-    return (
-      <div>
-        {STAGES.map((stage) => {
-          const si = allItems.filter((i) => i.stage.id === stage.id);
-          if (!si.length) return null;
-          const avg = si.reduce((a, i) => a + (i.ans.score ?? 0), 0) / si.length;
-          const isOpen = !!openSec[`stage_${stage.id}`];
-          return (
-            <div key={stage.id} className="tier-block" style={{ borderLeftColor: scoreColor(avg) }}>
-              <div className="tier-hd" onClick={() => toggle(`stage_${stage.id}`)}>
-                <div className="tier-hd-left">
-                  <span style={{ fontSize: "1.25rem" }}>{stage.icon}</span>
-                  <div>
-                    <div className="tier-label">{stage.label}</div>
-                    <div className="tier-desc" style={{ color: scoreColor(avg) }}>Avg {Math.round(avg * 10) / 10}/10 — {scoreLabel(avg)}</div>
-                  </div>
-                </div>
-                <span className="tier-tog">{isOpen ? "▲" : "▼"} {si.length}</span>
-              </div>
-              {isOpen && <div className="tier-body">{si.map((i) => card(i, scoreColor(avg)))}</div>}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  function renderScaleTab() {
+  function renderScaleSection() {
     const cats = [
-      { id: "strength", label: "💪🏼 Strength", range: "7–10", color: "#2ECC71" },
-      { id: "improve",  label: "⚠️ Improve",   range: "4–6",  color: "#E67E22" },
-      { id: "limited",  label: "🔥 Limited",    range: "1–3",  color: "#C0392B" },
+      { id: "strength", label: "💪🏼 Strength", color: "#2ECC71" },
+      { id: "improve",  label: "⚠️ Improve",   color: "#E67E22" },
+      { id: "limited",  label: "🔥 Limited",    color: "#C0392B" },
     ];
     return (
-      <div>
-        <ScaleSummaries allItems={allItems} answers={answers} />
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {cats.map((cat) => {
-          const ci = allItems.filter((i) => scoreCat(i.ans.score) === cat.id);
+          const ci = [...allItems
+            .filter((i) => scoreCat(i.ans.score) === cat.id && (i.ans.why ?? "").trim().length > 0)]
+            .sort((a, b) => {
+              const scoreDiff = (b.ans.score ?? 0) - (a.ans.score ?? 0);
+              if (scoreDiff !== 0) return scoreDiff;
+              return STAGES.findIndex((s) => s.id === a.stage.id) - STAGES.findIndex((s) => s.id === b.stage.id);
+            });
           if (!ci.length) return null;
-          const isOpen = !!openSec[`cat_${cat.id}`];
           return (
-            <div key={cat.id} className="tier-block" style={{ borderLeftColor: cat.color }}>
-              <div className="tier-hd" onClick={() => toggle(`cat_${cat.id}`)}>
-                <div className="tier-hd-left">
-                  <div>
-                    <div className="tier-label">{cat.label}</div>
-                    <div className="tier-desc">Scores {cat.range}</div>
-                  </div>
-                </div>
-                <span className="tier-tog">{isOpen ? "▲" : "▼"} {ci.length}</span>
+            <div key={cat.id} style={{
+              border: `1px solid ${cat.color}`,
+              borderRadius: ".875rem",
+              background: "#121008",
+              padding: "1rem 1.25rem",
+            }}>
+              <div style={{
+                fontFamily: "var(--font-syne)",
+                fontSize: ".75rem",
+                color: cat.color,
+                letterSpacing: ".05em",
+                marginBottom: ".875rem",
+              }}>
+                {cat.label}
               </div>
-              {isOpen && <div className="tier-body">{ci.map((i) => card(i, cat.color))}</div>}
+              <div style={{ display: "flex", flexDirection: "column", gap: ".875rem" }}>
+                {ci.map((item) => (
+                  <div key={item.key} style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                    <div style={{
+                      fontFamily: "var(--font-cormorant)",
+                      fontSize: "2rem",
+                      lineHeight: 1,
+                      color: cat.color,
+                      minWidth: "2.5rem",
+                      textAlign: "center",
+                      flexShrink: 0,
+                    }}>
+                      {item.ans.score}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--font-syne)", fontSize: ".75rem", color: "#8A7E72", marginBottom: ".25rem" }}>
+                        {item.set.label} / {item.stage.label}
+                      </div>
+                      <div style={{ fontStyle: "italic", color: "#5A5248", fontSize: ".8rem", lineHeight: 1.5 }}>
+                        {item.ans.why}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
     );
   }
-
-  function renderSetTab() {
-    return (
-      <div>
-        {SETS.map((set) => {
-          const si = allItems.filter((i) => i.set.id === set.id);
-          if (!si.length) return null;
-          const avg = si.reduce((a, i) => a + (i.ans.score ?? 0), 0) / si.length;
-          const isOpen = !!openSec[`set_${set.id}`];
-          return (
-            <div key={set.id} className="tier-block" style={{ borderLeftColor: scoreColor(avg) }}>
-              <div className="tier-hd" onClick={() => toggle(`set_${set.id}`)}>
-                <div className="tier-hd-left">
-                  <div>
-                    <div className="tier-label">{set.label}</div>
-                    <div className="tier-desc" style={{ color: scoreColor(avg) }}>Avg {Math.round(avg * 10) / 10}/10 — {scoreLabel(avg)}</div>
-                  </div>
-                </div>
-                <span className="tier-tog">{isOpen ? "▲" : "▼"} {si.length}</span>
-              </div>
-              {isOpen && <div className="tier-body">{si.map((i) => card(i, scoreColor(avg)))}</div>}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  function renderAssessmentTab() {
-    return (
-      <div className="assessment-grid">
-        <div className="ag-inner">
-          <div className="ag-corner" />
-          {STAGES.map((s) => (
-            <div key={s.id} className="ag-stage-hd">
-              <span className="ag-stage-icon">{s.icon}</span>
-              <span className="ag-stage-name">{s.label}</span>
-            </div>
-          ))}
-          {SETS.flatMap((set, sIdx) => [
-            <div key={`lbl-${set.id}`} className="ag-set-name">{set.label}</div>,
-            ...STAGES.map((stage, stIdx) => {
-              const ans = answers[set.id]?.[stage.id];
-              const hasAnswer = ans?.score != null;
-              return (
-                <div
-                  key={`${set.id}-${stage.id}`}
-                  className="ag-cell"
-                  onClick={() => {
-                    setPendingUpdate({ setIdx: sIdx, stageIdx: stIdx });
-                    router.push("/assessment");
-                  }}
-                >
-                  {hasAnswer ? (
-                    <span className="ag-cell-score" style={{ color: scoreColor(ans.score) }}>
-                      {ans.score}
-                    </span>
-                  ) : (
-                    <span className="ag-cell-empty">—</span>
-                  )}
-                </div>
-              );
-            }),
-          ])}
-        </div>
-      </div>
-    );
-  }
-
-  const tabs = [
-    { id: "tiers",      label: "Tiers" },
-    { id: "stage",      label: "Stage" },
-    { id: "scale",      label: "Scale" },
-    { id: "set",        label: "Set" },
-    { id: "assessment", label: assessmentTabLabel },
-  ];
 
   return (
     <div className="dashboard">
@@ -523,23 +429,13 @@ export function Dashboard() {
       <p className="tv-tagline">Power is your ability to clearly articulate your ideas, express yourself, take immediate action and continually move without delay.</p>
       <h2 className="tv-title">Current Power Snapshot</h2>
       <BirdsEyeGrid answers={answers} />
+      {renderContinueSection()}
       {renderNextStep()}
       {renderProgressSections()}
-      {renderContinueSection()}
-      <div className="tabs">
-        {tabs.map((t) => (
-          <button key={t.id} className={"tab-btn" + (tab === t.id ? " active" : "")} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <div className="tab-content">
-        {tab === "tiers"      && renderTiersTab()}
-        {tab === "stage"      && renderStageTab()}
-        {tab === "scale"      && renderScaleTab()}
-        {tab === "set"        && renderSetTab()}
-        {tab === "assessment" && renderAssessmentTab()}
-      </div>
+      <hr style={{ borderColor: "#1C1814", borderTop: "1px solid", margin: "1.5rem 0" }} />
+      {renderTiersSection()}
+      <hr style={{ borderColor: "#1C1814", borderTop: "1px solid", margin: "1.5rem 0" }} />
+      {renderScaleSection()}
     </div>
   );
 }

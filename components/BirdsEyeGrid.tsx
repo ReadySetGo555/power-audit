@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { SETS, STAGES } from "@/lib/data";
 import { scoreColor } from "@/lib/helpers";
 import type { Answers } from "@/lib/types";
@@ -121,19 +121,18 @@ export function BirdsEyeGrid({ answers }: Props) {
 
         {/* Data rows */}
         {SETS.map((set, si) => (
-          <>
-            <div key={`lbl-${set.id}`} className="beg-row-hd">{set.label}</div>
+          <React.Fragment key={set.id}>
+            <div className="beg-row-hd">{set.label}</div>
             {STAGES.map((stage) => {
               const score = answers[set.id]?.[stage.id]?.score ?? null;
               return <ScoreCell key={`${set.id}-${stage.id}`} score={score} />;
             })}
             <ScoreCell
-              key={`avg-${set.id}`}
               score={setAvgs[si]}
               clickable
               onClick={() => togglePanel("set", set.id)}
             />
-          </>
+          </React.Fragment>
         ))}
 
         {/* Totals row */}
@@ -146,7 +145,7 @@ export function BirdsEyeGrid({ answers }: Props) {
             onClick={() => togglePanel("stage", stage.id)}
           />
         ))}
-        <ScoreCell score={grandAvg} />
+        <div className="beg-cell" />
       </div>
 
       {renderExpandPanel()}

@@ -54,9 +54,13 @@ export function ScaleSummaries({ allItems, answers }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category: cat.label, items: payloadItems }),
       })
-        .then((r) => r.json())
-        .then(({ summary }: { summary: string }) => {
-          setSummaries((s) => ({ ...s, [cat.id]: { text: summary, loading: false, error: false } }));
+        .then(async (r) => {
+          const data = await r.json();
+          if (!r.ok || data.error) {
+            setSummaries((s) => ({ ...s, [cat.id]: { text: "", loading: false, error: true } }));
+          } else {
+            setSummaries((s) => ({ ...s, [cat.id]: { text: data.summary, loading: false, error: false } }));
+          }
         })
         .catch(() => {
           setSummaries((s) => ({ ...s, [cat.id]: { text: "", loading: false, error: true } }));

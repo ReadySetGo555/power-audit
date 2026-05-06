@@ -10,6 +10,10 @@ export async function POST(request: Request) {
     return Response.json({ summary: "" });
   }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return Response.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
+  }
+
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const itemLines = items.map((i) => {
@@ -27,12 +31,17 @@ ${itemLines}
 
 Write a single paragraph (3–5 sentences) that reflects back what this person is experiencing in this area of their creative power. Be honest, specific, and direct — draw from their actual words. Don't be generic or use filler. Speak to them as if you deeply understand their situation.`;
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 300,
-    messages: [{ role: "user", content: prompt }],
-  });
+  try {
+    const message = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 300,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-  const summary = message.content[0].type === "text" ? message.content[0].text : "";
-  return Response.json({ summary });
+    const summary = message.content[0].type === "text" ? message.content[0].text : "";
+    return Response.json({ summary });
+  } catch (err) {
+    console.error("Anthropic API error:", err);
+    return Response.json({ error: String(err) }, { status: 500 });
+  }
 }

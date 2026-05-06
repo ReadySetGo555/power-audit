@@ -12,14 +12,14 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## Current status
-**Phase:** Phase 2 complete — all infrastructure live
-**Last working on:** Completed Phase 2 infrastructure — May 5 2026. Ran Supabase Phase 2 migrations (block_cleared, action_scheduled, action_confirmed columns on assessment_answers + new block_answers table). Added ANTHROPIC_API_KEY to Vercel env vars and confirmed present in .env.local. App is fully operational end-to-end.
+**Phase:** Phase 2 complete — dashboard redesigned, tabs removed
+**Last working on:** Dashboard tab removal + scale section redesign — May 6 2026.
 
 **Pending manual steps:**
 ~~1. Run Supabase DB migrations~~ ✅ Done May 5 2026
 ~~2. Add `ANTHROPIC_API_KEY` to `.env.local` and Vercel env vars~~ ✅ Done May 5 2026
 
-**NOTE FOR NEXT SESSION:** Both pending infrastructure steps are now complete. The app should be fully functional including block clearing flow and AI scale summaries. Good place to smoke test the full flow or start the next feature.
+**NOTE FOR NEXT SESSION:** Dashboard is now a single scrollable view (no tabs). AI scale summaries are wired up but the Anthropic account tied to the API key is out of credits — add credits at console.anthropic.com to activate them. Otherwise the app is fully functional.
 
 ---
 
@@ -29,9 +29,11 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ Score 10 shows strength message instead of make-it-a-10 field
 - ✅ Two selection screens per set (Excited ❗ / Impactful 💥)
 - ✅ Both answer texts shown in selection screens (why + make it a 10)
-- ✅ Tier dashboard with 4 tabs (Tiers / Stage / Scale / Set)
+- ✅ Dashboard — single scrollable view (tabs removed May 6 2026):
+  - Progress sections (Goals/Somatic/Blocked) with X/Y counters
+  - Tiers section (1–4, same cards and logic)
+  - Scale section — three flat outlined boxes (Strength/Improve/Limited); each row shows score, set/stage label, and user's "why" answer; sorted score desc then stage order; only items with a why answer shown
 - ✅ 3 counters (biggest deficit by set, by stage, blocks overcome/total)
-- ✅ Goals and Somatic dropdowns at top of each tab
 - ✅ Tier 1 sorted: both ❗💥 first, then ❗ only, then 💥 only
 - ✅ Somatic process (4 steps: identify → agreement → rewrite → commit)
 - ✅ Completing somatic process clears block and re-tiers item
@@ -41,7 +43,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 - ✅ resetAll() removed from Begin button — no more data wipe
 - ✅ Deployed to Vercel with auto-deploy from GitHub
 - ✅ PWA configured — installable to phone home screen
-- ✅ Assessment grid tab (shows all 24 questions, labeled "Finish Full Assessment" / "View Assessment Birds-eye")
+- ~~Assessment grid tab~~ Removed May 6 2026 — redundant with birds-eye grid at top of dashboard
 - ✅ Clickable stage badges for navigation within a set
 - ✅ Set tabs for navigation between sets
 - ✅ "Continue where you left off" section on dashboard
@@ -58,7 +60,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
   - 9-step block clearing process at `/blocks/[setId]/[stageId]` (actions → behaviors → feelings → thoughts → snapshot → belief → agreement → new_agreement → immediate_action)
   - Somatic branch from within block clearing (step 3 feelings → `/somatic/...?from=blocks` → returns to blocks without re-triggering somatic completion)
   - Two completion paths in block clearing: "I'll do it now" (completes immediately) vs "Schedule it for later" (marks scheduled, shows in Continue section)
-  - AI-generated scale summaries per score tier (Limited/Improve/Strength) via `/api/summarize` + Anthropic claude-haiku-4-5-20251001
+  - AI-generated scale summaries wired up via `/api/summarize` + Anthropic claude-haiku-4-5-20251001 (inactive — account out of credits; add credits at console.anthropic.com)
   - Header: "ATTN: Dashboard" left link, Power Audit badge removed
   - Dashboard header: Power Audit eyebrow, tagline, "Current Power Snapshot" title, Counters removed
   - Return behavior: auto-redirect to dashboard if all 24 answers + all 4 selections complete
@@ -67,6 +69,7 @@ A self-guided assessment app built on the Attention Alignment Process framework.
 ---
 
 ## What's in progress / partially working
+- ⚠️ AI scale summaries — wired up but Anthropic account is out of credits; add credits at console.anthropic.com to activate
 - ⚠️ PWA caching on iOS — service worker can serve stale version after deploy (fix: force-close and reopen, or reinstall PWA)
 - ⚠️ Vercel auto-deploy occasionally misses commits — manual redeploy via Vercel dashboard as workaround
 
@@ -173,4 +176,4 @@ claude
 Then say: "Read PROGRESS.md and continue from where we left off."
 
 ---
-*Last updated: May 5 2026 — Phase 2 infrastructure complete (migrations run, Anthropic API key live)*
+*Last updated: May 6 2026 — Dashboard tabs removed, single scrollable view, scale section redesigned*
